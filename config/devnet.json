@@ -1,0 +1,28 @@
+{
+  "environment": "devnet",
+  "network": {
+    "rpcUrl": "https://api.devnet.solana.com",
+    "programId": "3wiFPaYTQZZD71rd4pohPRr8JaFaGN3XaNWLoGSk31Ck",
+    "commitment": "confirmed"
+  },
+  "circuits": {
+    "transferCircuit": "./circuits/build/transfer.r1cs",
+    "balanceCircuit": "./circuits/build/balance.r1cs",
+    "ringSignatureCircuit": "./circuits/build/ring_signature.r1cs",
+    "transferVK": "./circuits/build/transfer_verification_key.json",
+    "balanceVK": "./circuits/build/balance_verification_key.json",
+    "ringSignatureVK": "./circuits/build/ring_signature_verification_key.json"
+  },
+  "relayer": {
+    "enabled": false,
+    "endpoints": [],
+    "minReputation": 50,
+    "timeout": 30000
+  },
+  "security": {
+    "requireCeremonyComplete": false,
+    "ceremonyVerificationHash": "",
+    "encryptNotes": true,
+    "maxTransactionRetries": 3
+  }
+}

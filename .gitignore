@@ -34,6 +34,9 @@ circuits/verification_key.json
 circuits/proof.json
 circuits/public.json
 
+# Ceremony files (large)
+scripts/ceremony/*.ptau
+
 # Rust
 target/
 **/*.rs.bk
@@ -60,3 +63,10 @@ data/
 .env.production
 secrets/
 keys/
+
+# Production configuration (may contain sensitive values)
+config/mainnet.json
+
+# Encrypted storage
+*.enc
+notes.enc

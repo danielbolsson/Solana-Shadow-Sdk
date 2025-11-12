@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import { buildPoseidon } from 'circomlibjs';
+import { EncryptedNoteStorage } from './encrypted-note-storage';
 
 export interface ShieldedNote {
   commitment: string;
@@ -25,14 +26,27 @@ export interface NullifierEntry {
   txSignature: string;
 }
 
+export interface Note {
+  commitment: string;
+  nullifier: string;
+  amount: number;
+  secret: string;
+  owner: string;
+  spent: boolean;
+  createdAt: number;
+  txSignature?: string;
+}
+
 export class NoteManager {
   private notes: Map<string, ShieldedNote>;
   private nullifiers: Map<string, NullifierEntry>;
   private dataDir: string;
   private poseidon: any;
   private initialized: boolean = false;
+  private encryptedStorage: EncryptedNoteStorage | null = null;
+  private storagePassword: string | null = null;
 
-  constructor(dataDir: string = './data') {
+  constructor(dataDir: string = './data', password?: string) {
     this.notes = new Map();
     this.nullifiers = new Map();
     this.dataDir = dataDir;
@@ -40,6 +54,12 @@ export class NoteManager {
     // Create data directory if it doesn't exist
     if (!fs.existsSync(this.dataDir)) {
       fs.mkdirSync(this.dataDir, { recursive: true });
+    }
+
+    // Initialize encrypted storage if password provided
+    if (password) {
+      this.encryptedStorage = new EncryptedNoteStorage(this.dataDir);
+      this.storagePassword = password;
     }
   }
 
@@ -50,7 +70,7 @@ export class NoteManager {
     if (this.initialized) return;
     this.poseidon = await buildPoseidon();
     this.initialized = true;
-    this.load();
+    await this.load();
   }
 
   private ensureInitialized(): void {
@@ -217,29 +237,58 @@ export class NoteManager {
   }
 
   /**
-   * Save to disk
+   * Save to disk (encrypted if password provided)
    */
-  private save(): void {
-    const data = this.export();
-    const notesPath = path.join(this.dataDir, 'notes.json');
-    fs.writeFileSync(notesPath, JSON.stringify(data, null, 2));
+  private async save(): Promise<void> {
+    if (this.encryptedStorage && this.storagePassword) {
+      // Use encrypted storage
+      const notes = Array.from(this.notes.values());
+      await this.encryptedStorage.saveNotes(notes, this.storagePassword);
+    } else {
+      // Fallback to plaintext (development only)
+      const data = this.export();
+      const notesPath = path.join(this.dataDir, 'notes.json');
+      fs.writeFileSync(notesPath, JSON.stringify(data, null, 2));
+    }
   }
 
   /**
-   * Load from disk
+   * Load from disk (decrypted if password provided)
    */
-  private load(): void {
-    const notesPath = path.join(this.dataDir, 'notes.json');
+  private async load(): Promise<void> {
+    if (this.encryptedStorage && this.storagePassword) {
+      // Load from encrypted storage
+      try {
+        const notes = await this.encryptedStorage.loadNotes(this.storagePassword);
+        this.notes = new Map(notes.map(n => [n.commitment, n as ShieldedNote]));
 
-    if (!fs.existsSync(notesPath)) {
-      return;
-    }
+        // Reconstruct nullifiers from spent notes
+        for (const note of notes) {
+          if (note.spent && note.txSignature) {
+            this.nullifiers.set(note.nullifier, {
+              nullifier: note.nullifier,
+              usedAt: note.createdAt,
+              txSignature: note.txSignature
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load encrypted notes:', error);
+      }
+    } else {
+      // Load from plaintext (development only)
+      const notesPath = path.join(this.dataDir, 'notes.json');
 
-    try {
-      const data = JSON.parse(fs.readFileSync(notesPath, 'utf-8'));
-      this.import(data);
-    } catch (error) {
-      console.error('Failed to load notes database:', error);
+      if (!fs.existsSync(notesPath)) {
+        return;
+      }
+
+      try {
+        const data = JSON.parse(fs.readFileSync(notesPath, 'utf-8'));
+        this.import(data);
+      } catch (error) {
+        console.error('Failed to load notes database:', error);
+      }
     }
   }
 

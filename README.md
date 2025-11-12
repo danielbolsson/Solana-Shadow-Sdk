@@ -111,9 +111,12 @@ npx ts-node relayer-service.ts
 ```
 
 ### Use SDK
+
+**Development (devnet):**
 ```typescript
 import { GhostPrivacySDK } from './privacy-integration/privacy-sdk';
 
+// Configuration loaded from config/devnet.json or environment variables
 const sdk = new GhostPrivacySDK();
 await sdk.initialize();
 
@@ -123,6 +126,21 @@ const note = await sdk.deposit(payer, 1.0, ownerAddress);
 // Withdraw anonymously via relayer
 const signature = await sdk.withdrawViaRelayer(note, recipient, 1.0);
 ```
+
+**Production (mainnet):**
+```typescript
+// Set environment
+process.env.GHOST_ENV = 'mainnet';
+process.env.GHOST_STORAGE_PASSWORD = 'strong-password';
+
+// Configuration loaded from config/mainnet.json or environment variables
+const sdk = new GhostPrivacySDK({
+  password: process.env.GHOST_STORAGE_PASSWORD // Enables encrypted storage
+});
+await sdk.initialize();
+```
+
+See `PRODUCTION_SETUP.md` for complete mainnet deployment instructions.
 
 ## 📊 Security Features
 
@@ -141,7 +159,7 @@ const signature = await sdk.withdrawViaRelayer(note, recipient, 1.0);
 1. **No audit** - Code has not been professionally audited.
 2. **Testing incomplete** - Needs comprehensive circuit tests and BPF tests.
 
-**Note on Trusted Setup:** The repository includes ceremony scripts (`scripts/quick-ceremony.js`) to generate production-quality keys. Current keys in `circuits/build/` should be regenerated using the ceremony before mainnet deployment.
+**Note on Trusted Setup:** Multi-party trusted setup ceremony must be completed before mainnet deployment. See `TRUSTED_SETUP.md` and `ceremony-coordinator/README.md` for complete instructions.
 
 ## 🛣️ Roadmap to Production
 
@@ -165,12 +183,21 @@ const signature = await sdk.withdrawViaRelayer(note, recipient, 1.0);
 - `programs/ghost-privacy/src/state.rs` - On-chain state management
 - `programs/ghost-privacy/src/processor.rs` - Instruction processing
 
+### Production Deployment
+- `PRODUCTION_SETUP.md` - Complete mainnet deployment guide
+  - Configuration management (environment-based)
+  - Encrypted storage setup
+  - Production readiness validation
+  - Deployment workflow
+  - Security checklist
+
 ### Trusted Setup
 - `TRUSTED_SETUP.md` - Complete guide for multi-party ceremony
   - Phase 1: Powers of Tau ceremony
   - Phase 2: Circuit-specific setup
   - Security best practices
   - Participant guidelines
+- `ceremony-coordinator/README.md` - Ceremony coordinator and participant tools
 
 ## 🤝 Contributing
 

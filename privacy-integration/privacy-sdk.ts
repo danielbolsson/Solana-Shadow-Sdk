@@ -10,6 +10,7 @@ import { SolanaPrivacyClient } from './solana-client';
 import { NoteManager, ShieldedNote } from './note-manager';
 import * as fs from 'fs';
 import * as path from 'path';
+import config from '../config/production.config';
 
 export interface PrivacyConfig {
   rpcUrl: string;
@@ -17,6 +18,7 @@ export interface PrivacyConfig {
   network: string;
   dataDir: string;
   relayerUrl?: string;
+  password?: string;
 }
 
 export class GhostPrivacySDK {
@@ -28,13 +30,18 @@ export class GhostPrivacySDK {
   private poolAddress?: string;
   private initialized: boolean = false;
 
-  constructor(config?: Partial<PrivacyConfig>) {
-    // Load config
+  constructor(configOverride?: Partial<PrivacyConfig>) {
+    // Load from centralized configuration
+    const prodConfig = config.load();
+
+    // Merge with overrides (overrides take precedence for development)
     this.config = {
-      rpcUrl: config?.rpcUrl || 'https://api.devnet.solana.com',
-      programId: config?.programId || '3wiFPaYTQZZD71rd4pohPRr8JaFaGN3XaNWLoGSk31Ck',
-      network: config?.network || 'devnet',
-      dataDir: config?.dataDir || './data',
+      rpcUrl: configOverride?.rpcUrl || prodConfig.network.rpcUrl,
+      programId: configOverride?.programId || prodConfig.network.programId,
+      network: configOverride?.network || prodConfig.environment,
+      dataDir: configOverride?.dataDir || './data',
+      relayerUrl: configOverride?.relayerUrl,
+      password: configOverride?.password || process.env.GHOST_STORAGE_PASSWORD,
     };
 
     // Initialize components
@@ -56,8 +63,8 @@ export class GhostPrivacySDK {
       path.join(this.config.dataDir, 'merkle_tree.json')
     );
 
-    // Initialize note manager
-    this.noteManager = new NoteManager(this.config.dataDir);
+    // Initialize note manager with encrypted storage if password provided
+    this.noteManager = new NoteManager(this.config.dataDir, this.config.password);
     await this.noteManager.initialize();
 
     // Load pool address
