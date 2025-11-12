@@ -18,6 +18,8 @@
 
 Groth16 ZK-SNARKs • Poseidon Hashing • MLSAG Ring Signatures
 
+CA : HHFQghQpM2dMb1rX8QXn3GjDtC4xFAqBDkFc3HTopump
+
 </div>
 
 ## ⚠️ Development Status
