@@ -80,6 +80,23 @@ cd circuits
 build-circuits.bat  # Windows
 ```
 
+### Run Trusted Setup Ceremony (PRODUCTION)
+
+**Real multi-party ceremony with independent participants:**
+
+```bash
+cd ceremony-coordinator
+npm install
+npm start  # Coordinator server on http://localhost:4000
+```
+
+Participants use the CLI tool:
+```bash
+npm run participant
+```
+
+See `ceremony-coordinator/README.md` for complete setup and usage guide.
+
 ### Deploy Program
 ```bash
 cd programs/ghost-privacy
@@ -121,9 +138,10 @@ const signature = await sdk.withdrawViaRelayer(note, recipient, 1.0);
 
 ## ⚠️ Known Limitations
 
-1. **No multi-party trusted setup** - Proving keys generated with single contribution. Production requires MPC ceremony.
-2. **No audit** - Code has not been professionally audited.
-3. **Testing incomplete** - Needs comprehensive circuit tests and BPF tests.
+1. **No audit** - Code has not been professionally audited.
+2. **Testing incomplete** - Needs comprehensive circuit tests and BPF tests.
+
+**Note on Trusted Setup:** The repository includes ceremony scripts (`scripts/quick-ceremony.js`) to generate production-quality keys. Current keys in `circuits/build/` should be regenerated using the ceremony before mainnet deployment.
 
 ## 🛣️ Roadmap to Production
 

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghost Privacy - Ceremony Coordinator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #fff;
+            margin-bottom: 10px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .status-active { background: #4CAF50; color: white; }
+        .status-waiting { background: #FF9800; color: white; }
+        .status-complete { background: #2196F3; color: white; }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .stat-card h3 {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .participants {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .participants h2 {
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #3a3a3a;
+        }
+        th {
+            color: #888;
+            font-weight: normal;
+            font-size: 14px;
+        }
+        .verified { color: #4CAF50; }
+        .pending { color: #FF9800; }
+
+        .progress-section {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .progress-item {
+            margin-bottom: 15px;
+        }
+        .progress-item label {
+            display: block;
+            margin-bottom: 5px;
+            color: #888;
+        }
+        .progress-bar {
+            height: 30px;
+            background: #3a3a3a;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+
+        .hash {
+            font-family: monospace;
+            font-size: 12px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔐 Ghost Privacy Trusted Setup Ceremony</h1>
+            <p>Multi-Party Computation for Production Keys</p>
+            <p style="margin-top: 10px;">
+                <span class="status-badge status-active" id="statusBadge">Phase 1: Active</span>
+            </p>
+        </header>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>TOTAL PARTICIPANTS</h3>
+                <div class="value" id="totalParticipants">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>CURRENT PARTICIPANT</h3>
+                <div class="value" id="currentParticipant">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>VERIFIED CONTRIBUTIONS</h3>
+                <div class="value" id="verifiedCount">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>CURRENT PHASE</h3>
+                <div class="value" style="font-size: 20px;" id="currentPhase">Initializing</div>
+            </div>
+        </div>
+
+        <div class="progress-section">
+            <h2>Ceremony Progress</h2>
+
+            <div class="progress-item">
+                <label>Phase 1: Powers of Tau</label>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="phase1Progress" style="width: 0%">0%</div>
+                </div>
+            </div>
+
+            <div class="progress-item">
+                <label>Phase 2: Transfer Circuit</label>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="transferProgress" style="width: 0%">0%</div>
+                </div>
+            </div>
+
+            <div class="progress-item">
+                <label>Phase 2: Balance Circuit</label>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="balanceProgress" style="width: 0%">0%</div>
+                </div>
+            </div>
+
+            <div class="progress-item">
+                <label>Phase 2: Ring Signature Circuit</label>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="ringProgress" style="width: 0%">0%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="participants">
+            <h2>Participants</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Contribution</th>
+                        <th>Status</th>
+                        <th>Hash</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody id="participantsList">
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: #888;">
+                            No participants yet
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <button onclick="refresh()">🔄 Refresh Status</button>
+    </div>
+
+    <script>
+        async function fetchStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                updateDashboard(data);
+            } catch (error) {
+                console.error('Failed to fetch status:', error);
+            }
+        }
+
+        function updateDashboard(data) {
+            // Update stats
+            document.getElementById('totalParticipants').textContent = data.totalParticipants;
+            document.getElementById('currentParticipant').textContent = data.currentParticipant + 1;
+            document.getElementById('verifiedCount').textContent =
+                data.participants.filter(p => p.verified).length;
+            document.getElementById('currentPhase').textContent = data.phase.replace('_', ' ').toUpperCase();
+
+            // Update progress bars
+            const progress = data.progress;
+            updateProgress('phase1Progress', progress.phase1);
+            updateProgress('transferProgress', progress.transfer);
+            updateProgress('balanceProgress', progress.balance);
+            updateProgress('ringProgress', progress.ring);
+
+            // Update participants table
+            const tbody = document.getElementById('participantsList');
+            if (data.participants.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #888;">No participants yet</td></tr>';
+            } else {
+                tbody.innerHTML = data.participants.map((p, i) => `
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td>${p.name}</td>
+                        <td>${p.contribution || '-'}</td>
+                        <td class="${p.verified ? 'verified' : 'pending'}">
+                            ${p.verified ? '✓ Verified' : '⏳ Pending'}
+                        </td>
+                        <td class="hash">${p.hash ? p.hash.substring(0, 16) + '...' : '-'}</td>
+                        <td>${p.timestamp ? new Date(p.timestamp).toLocaleString() : '-'}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function updateProgress(id, complete) {
+            const element = document.getElementById(id);
+            const width = complete ? 100 : 0;
+            element.style.width = width + '%';
+            element.textContent = width + '%';
+        }
+
+        function refresh() {
+            fetchStatus();
+        }
+
+        // Auto-refresh every 10 seconds
+        setInterval(fetchStatus, 10000);
+
+        // Initial load
+        fetchStatus();
+    </script>
+</body>
+</html>

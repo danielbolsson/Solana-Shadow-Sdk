@@ -1,0 +1,19 @@
+# Ceremony data (contains large files and participant info)
+data/
+participant-data/
+uploads/
+
+# Node modules
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
