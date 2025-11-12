@@ -130,6 +130,15 @@ cd privacy-integration
 npx ts-node relayer-service.ts
 ```
 
+### Start Monitoring Dashboard
+```bash
+cd monitoring
+npm install
+npm start  # Dashboard on http://localhost:5000
+```
+
+Real-time metrics, relayer health, circuit performance, and system monitoring.
+
 ### Use SDK
 
 **Development (devnet):**
@@ -173,6 +182,8 @@ See `PRODUCTION_SETUP.md` for complete mainnet deployment instructions.
 | VK Storage | ✅ Implemented | On-chain PDA accounts |
 | Relayer Network | ✅ Implemented | Decentralized with reputation scoring |
 | Merkle Trees | ✅ Implemented | 20-level Poseidon tree |
+| Encrypted Storage | ✅ Implemented | AES-256-GCM |
+| Monitoring Dashboard | ✅ Implemented | Real-time metrics & health |
 
 ## ⚠️ Known Limitations
 
@@ -186,6 +197,7 @@ See `PRODUCTION_SETUP.md` for complete mainnet deployment instructions.
 - [ ] Multi-party trusted setup ceremony
 - [x] Store verification keys in PDA accounts
 - [x] Decentralized relayer network with reputation system
+- [x] Monitoring dashboard with operational visibility
 - [ ] Professional security audit
 - [ ] Comprehensive test suite (circuits + program)
 - [ ] Mainnet deployment with TVL limits
@@ -218,6 +230,14 @@ See `PRODUCTION_SETUP.md` for complete mainnet deployment instructions.
   - Security best practices
   - Participant guidelines
 - `ceremony-coordinator/README.md` - Ceremony coordinator and participant tools
+
+### Monitoring
+- `monitoring/README.md` - Real-time monitoring dashboard
+  - Transaction metrics and activity tracking
+  - Relayer health and reputation monitoring
+  - Circuit performance statistics
+  - System health checks and alerts
+  - REST API and WebSocket integration
 
 ## 🤝 Contributing
 
