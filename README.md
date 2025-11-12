@@ -1,4 +1,4 @@
-# Ghost Privacy Protocol
+<div align="center">
 
 ```
    ▄████  ██░ ██  ▒█████    ██████ ▄▄▄█████▓
@@ -12,7 +12,13 @@
        ░  ░  ░  ░    ░ ░        ░
 ```
 
-**Production-ready zero-knowledge privacy protocol for Solana** with Groth16 ZK-SNARKs, Poseidon hashing, and MLSAG ring signatures.
+# Ghost Privacy Protocol
+
+**Production-ready zero-knowledge privacy protocol for Solana**
+
+Groth16 ZK-SNARKs • Poseidon Hashing • MLSAG Ring Signatures
+
+</div>
 
 ## ⚠️ Development Status
 
