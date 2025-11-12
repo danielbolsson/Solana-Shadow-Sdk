@@ -30,6 +30,17 @@ if (!fs.existsSync(DATA_DIR)) {
 }
 
 async function main() {
+  console.log('\n');
+  console.log('   ▄████  ██░ ██  ▒█████    ██████ ▄▄▄█████▓');
+  console.log('  ██▒ ▀█▒▓██░ ██▒▒██▒  ██▒▒██    ▒ ▓  ██▒ ▓▒');
+  console.log(' ▒██░▄▄▄░▒██▀▀██░▒██░  ██▒░ ▓██▄   ▒ ▓██░ ▒░');
+  console.log(' ░▓█  ██▓░▓█ ░██ ▒██   ██░  ▒   ██▒░ ▓██▓ ░ ');
+  console.log(' ░▒▓███▀▒░▓█▒░██▓░ ████▓▒░▒██████▒▒  ▒██▒ ░ ');
+  console.log('  ░▒   ▒  ▒ ░░▒░▒░ ▒░▒░▒░ ▒ ▒▓▒ ▒ ░  ▒ ░░   ');
+  console.log('   ░   ░  ▒ ░▒░ ░  ░ ▒ ▒░ ░ ░▒  ░ ░    ░    ');
+  console.log(' ░ ░   ░  ░  ░░ ░░ ░ ░ ▒  ░  ░  ░    ░      ');
+  console.log('       ░  ░  ░  ░    ░ ░        ░           ');
+  console.log('\n');
   console.log('========================================');
   console.log('Ghost Privacy - Ceremony Participant');
   console.log('========================================\n');

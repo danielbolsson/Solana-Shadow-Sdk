@@ -371,6 +371,17 @@ app.get('/', (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
+  console.log('\n');
+  console.log('   ▄████  ██░ ██  ▒█████    ██████ ▄▄▄█████▓');
+  console.log('  ██▒ ▀█▒▓██░ ██▒▒██▒  ██▒▒██    ▒ ▓  ██▒ ▓▒');
+  console.log(' ▒██░▄▄▄░▒██▀▀██░▒██░  ██▒░ ▓██▄   ▒ ▓██░ ▒░');
+  console.log(' ░▓█  ██▓░▓█ ░██ ▒██   ██░  ▒   ██▒░ ▓██▓ ░ ');
+  console.log(' ░▒▓███▀▒░▓█▒░██▓░ ████▓▒░▒██████▒▒  ▒██▒ ░ ');
+  console.log('  ░▒   ▒  ▒ ░░▒░▒░ ▒░▒░▒░ ▒ ▒▓▒ ▒ ░  ▒ ░░   ');
+  console.log('   ░   ░  ▒ ░▒░ ░  ░ ▒ ▒░ ░ ░▒  ░ ░    ░    ');
+  console.log(' ░ ░   ░  ░  ░░ ░░ ░ ░ ▒  ░  ░  ░    ░      ');
+  console.log('       ░  ░  ░  ░    ░ ░        ░           ');
+  console.log('\n');
   console.log('========================================');
   console.log('Ghost Privacy - Ceremony Coordinator');
   console.log('========================================');

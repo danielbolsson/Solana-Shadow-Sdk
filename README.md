@@ -1,5 +1,17 @@
 # Ghost Privacy Protocol
 
+```
+   ▄████  ██░ ██  ▒█████    ██████ ▄▄▄█████▓
+  ██▒ ▀█▒▓██░ ██▒▒██▒  ██▒▒██    ▒ ▓  ██▒ ▓▒
+ ▒██░▄▄▄░▒██▀▀██░▒██░  ██▒░ ▓██▄   ▒ ▓██░ ▒░
+ ░▓█  ██▓░▓█ ░██ ▒██   ██░  ▒   ██▒░ ▓██▓ ░
+ ░▒▓███▀▒░▓█▒░██▓░ ████▓▒░▒██████▒▒  ▒██▒ ░
+  ░▒   ▒  ▒ ░░▒░▒░ ▒░▒░▒░ ▒ ▒▓▒ ▒ ░  ▒ ░░
+   ░   ░  ▒ ░▒░ ░  ░ ▒ ▒░ ░ ░▒  ░ ░    ░
+ ░ ░   ░  ░  ░░ ░░ ░ ░ ▒  ░  ░  ░    ░
+       ░  ░  ░  ░    ░ ░        ░
+```
+
 **Production-ready zero-knowledge privacy protocol for Solana** with Groth16 ZK-SNARKs, Poseidon hashing, and MLSAG ring signatures.
 
 ## ⚠️ Development Status
