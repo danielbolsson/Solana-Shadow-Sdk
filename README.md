@@ -49,10 +49,10 @@ The protocol follows a **Deposit → Proof → Withdraw** workflow inspired by T
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Alice as 👤 Sender
+    participant Alice as 👤 Alice
     participant Pool as 🏦 Shadow Pool
     participant Relayer as 🔄 Relayer
-    participant Bob as 👤 Recipient (Fresh)
+    participant Bob as 👤 Bob
 
     Note over Alice, Pool: 1. DEPOSIT (Shielding)
     Alice->>Alice: Generate Secret Note {k, r}
