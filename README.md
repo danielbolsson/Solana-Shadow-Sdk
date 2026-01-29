@@ -1,24 +1,10 @@
 <div align="center">
 
-```
-   ▄████  ██░ ██  ▒█████    ██████ ▄▄▄█████▓
-  ██▒ ▀█▒▓██░ ██▒▒██▒  ██▒▒██    ▒ ▓  ██▒ ▓▒
- ▒██░▄▄▄░▒██▀▀██░▒██░  ██▒░ ▓██▄   ▒ ▓██░ ▒░
- ░▓█  ██▓░▓█ ░██ ▒██   ██░  ▒   ██▒░ ▓██▓ ░
- ░▒▓███▀▒░▓█▒░██▓░ ████▓▒░▒██████▒▒  ▒██▒ ░
-  ░▒   ▒  ▒ ░░▒░▒░ ▒░▒░▒░ ▒ ▒▓▒ ▒ ░  ▒ ░░
-   ░   ░  ▒ ░▒░ ░  ░ ▒ ▒░ ░ ░▒  ░ ░    ░
- ░ ░   ░  ░  ░░ ░░ ░ ░ ▒  ░  ░  ░    ░
-       ░  ░  ░  ░    ░ ░        ░
-```
-
 # Shadow Privacy Protocol
 
 ** zero-knowledge privacy protocol for Solana**
 
 Groth16 ZK-SNARKs • Poseidon Hashing • MLSAG Ring Signatures
-
-CA : HHFQghQpM2dMb1rX8QXn3GjDtC4xFAqBDkFc3HTopump
 
 </div>
 
