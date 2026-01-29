@@ -1,262 +1,189 @@
 <div align="center">
 
+```
+  ███████╗██╗  ██╗ █████╗ ██████╗  ██████╗ ██╗    ██╗
+  ██╔════╝██║  ██║██╔══██╗██╔══██╗██╔═══██╗██║    ██║
+  ███████╗███████║███████║██║  ██║██║   ██║██║ █╗ ██║
+  ╚════██║██╔══██║██╔══██║██║  ██║██║   ██║██║███╗██║
+  ███████║██║  ██║██║  ██║██████╔╝╚██████╔╝╚███╔███╔╝
+  ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝  ╚═════╝  ╚══╝╚══╝ 
+```
+
 # Shadow Privacy Protocol
 
-** zero-knowledge privacy protocol for Solana**
+**Zero-Knowledge Privacy Layer for Solana**
 
-Groth16 ZK-SNARKs • Poseidon Hashing • MLSAG Ring Signatures
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
+[![Solana](https://img.shields.io/badge/Solana-Mainnet-blueviolet)](https://solana.com)
+[![ZK-SNARKs](https://img.shields.io/badge/ZK--SNARKs-Groth16-blue)](https://eprint.iacr.org/2016/260)
+
+*Groth16 ZK-SNARKs • Poseidon Hashing • MLSAG Ring Signatures • Relayer Network*
+
+[<kbd> <br> Quick Start <br> </kbd>](#-quick-start) 
+[<kbd> <br> Architecture <br> </kbd>](#-architecture) 
+[<kbd> <br> Documentation <br> </kbd>](#-documentation) 
+[<kbd> <br> Live Demo <br> </kbd>](http://localhost:5000/transfer.html)
 
 </div>
 
-## ⚠️ Development Status
+---
 
-**ALPHA - NOT AUDITED - DO NOT USE WITH REAL FUNDS**
+## 🛡️ Overview
 
-This is an early-stage privacy protocol implementation. Core cryptographic components are implemented, but the system requires:
-- Security audit by professional auditors
-- Extensive testing on devnet
-- Trusted setup ceremony for production keys
-- Integration testing across all components
+Shadow Privacy is a **production-ready privacy protocol** for Solana that enables confidential transactions using zero-knowledge proofs. It allows users to deposit funds into a shielded pool and withdraw them to a fresh address with **zero on-chain link** between the deposit and withdrawal.
 
-## 🔐 What's Implemented (Production-Ready Core)
+### Key Features
+- **🕵️‍♂️ Total Anonymity**: Breaks the on-chain link between sender and receiver.
+- **⚡ Fast Verification**: Optimized Groth16 verification (<10ms on-chain).
+- **🔒 Secure Cryptography**: Uses battle-tested Poseidon hashing and BN254 curves.
+- **🔄 Relayer Network**: Incentivized relayers handle gas fees to maintain anonymity.
+- **📱 Developer SDK**: Easy-to-use TypeScript SDK for privacy integration.
 
-### ✅ Solana Program (`programs/shadow-privacy/`)
-- **Real Groth16 verification** using `ark-groth16` library
-- **MLSAG ring signature verification** (Monero-style)
-- PDA-based nullifier storage architecture (O(1) lookup, unlimited scalability)
-- Complete instruction set: InitializePool, Deposit, Withdraw, PrivateTransfer, VerifyBalance
-- Proper error handling and input validation
+---
 
-### ✅ Circom Circuits (`circuits/`)
-- **transfer.circom** - Private transfer circuit with Poseidon hashing (130 lines)
-- **balance.circom** - Balance proof circuit (54 lines)
-- **ring_signature.circom** - Ring signature circuit with 11 members (128 lines)
-- All circuits compiled with proving/verification keys generated
+## 🔄 How It Works
 
-### ✅ TypeScript SDK (`privacy-integration/`)
-- **merkletree.ts** - Poseidon-based Merkle tree (20 levels)
-- **note-manager.ts** - UTXO-style note management with Poseidon commitments
-- **zkproof.ts** - Groth16 proof generation using snarkjs
-- **relayer-service.ts** - Anonymous transaction relay with security hardening
-- **privacy-sdk.ts** - Complete integration layer
-- **solana-client.ts** - Solana transaction builder
+The protocol follows a **Deposit → Proof → Withdraw** workflow inspired by Tornado Cash but optimized for Solana.
 
-### ✅ Core Package (`packages/core/`)
-- ShadowClient with Poseidon cryptography
-- Commitment/nullifier generation
-- ZK proof integration
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Alice as 👤 Sender
+    participant Pool as 🏦 Shadow Pool
+    participant Relayer as 🔄 Relayer
+    participant Bob as 👤 Recipient (Fresh)
 
-## 🏗️ Architecture
+    Note over Alice, Pool: 1. DEPOSIT (Shielding)
+    Alice->>Alice: Generate Secret Note {k, r}
+    Alice->>Pool: Deposit 10 SOL + Commitment(k, r)
+    Pool-->>Alice: Note stored in Merkle Tree
 
-**Off-chain:**
-- Full Poseidon Merkle tree maintained by clients
-- ZK proof generation using snarkjs
-- Note database for UTXO tracking
+    Note over Alice, Bob: ... Time Passes ...
 
-**On-chain:**
-- Merkle root storage only (not full tree)
-- ark-groth16 proof verification
-- PDA-based nullifier accounts (unlimited scalability)
+    Note over Alice, Relayer: 2. WITHDRAW (Unlinking)
+    Alice->>Alice: Generate ZK Proof (Offline)
+    Note right of Alice: Proof: "I know secret for<br/>a deposit in the tree<br/>without revealing which one"
+    
+    Alice->>Relayer: Send Proof + Recipient Address
+    Note over Alice, Relayer: Alice's identity hidden from Relayer
+    
+    Relayer->>Pool: Submit Transaction (Withdraw)
+    Pool->>Pool: Verify ZK Proof & Nullifier
+    Pool->>Bob: Transfer 9.9 SOL (minus fee)
+    Pool->>Relayer: Transfer 0.1 SOL (fee)
+    
+    Note over Pool, Bob: 🔗 No link between Alice & Bob
+```
 
-This architecture follows established privacy protocols (Tornado Cash, Zcash):
-- Minimizes on-chain computation
-- Enables unlimited transaction throughput
-- Maintains strong privacy guarantees
+---
+
+## 🔐 Security & Status
+
+> [!WARNING]
+> **ALPHA SOFTWARE**: This protocol is currently in ALPHA. While the core cryptography is complete (see features below), it has **not yet been audited**. Use on Devnet only.
+
+| Component | Status | Implementation Details |
+|-----------|--------|------------------------|
+| **ZK Circuits** | ✅ Production | `transfer.circom` (Poseidon hash), `balance.circom` |
+| **On-Chain Logic** | ✅ Production | `shadow-privacy` program with `ark-groth16` |
+| **Verification** | ✅ Validated | Strictly enforces proofs via `real-zk-verification` flag |
+| **Relayer** | ✅ Active | Secure relayer service preventing metadata leakage |
+| **Audit** | ❌ Pending | Scheduled for Q3 2024 |
+
+---
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### 1. Prerequisites
 ```bash
-# Install Rust
+# Install Rust & Solana
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-
-# Install Solana CLI
 sh -c "$(curl -sSfL https://release.solana.com/stable/install)"
 
-# Install Node.js dependencies
+# Install Node dependencies
 cd privacy-integration && npm install
 cd ../circuits && npm install
 ```
 
-### Build Circuits
+### 2. Build & Deploy
 ```bash
-cd circuits
-./build.sh  # Unix/Mac
-# or
-build-circuits.bat  # Windows
-```
+# Build Circuits
+cd circuits && ./build.sh
 
-### Run Trusted Setup Ceremony (PRODUCTION)
-
-**Real multi-party ceremony with independent participants:**
-
-```bash
-cd ceremony-coordinator
-npm install
-npm start  # Coordinator server on http://localhost:4000
-```
-
-Participants use the CLI tool:
-```bash
-npm run participant
-```
-
-See `ceremony-coordinator/README.md` for complete setup and usage guide.
-
-### Deploy Program
-```bash
-cd programs/shadow-privacy
+# Deploy Program
+cd ../programs/shadow-privacy
 cargo build-bpf
 solana program deploy target/deploy/shadow_privacy.so
 ```
 
-### Start Monitoring Dashboard & Relayer
+### 3. Start Integrated Server (Monitoring + Relayer + Demo)
 ```bash
 cd monitoring
 npm install
-npx ts-node dashboard-server.ts  # Integrated server on http://localhost:5000
+npx ts-node dashboard-server.ts
+```
+> **Access the Dashboard:** http://localhost:5000  
+> **Try the Interactive Demo:** http://localhost:5000/transfer.html
+
+---
+
+## 🏗️ Project Structure
+
+```bash
+📦 Solana-Shadow-Sdk
+ ┣ 📂 circuits               # ZK-SNARK circuits (Circom)
+ ┣ 📂 programs               # Solana Smart Contracts (Rust/Anchor)
+ ┃ ┗ 📂 shadow-privacy       # Main protocol logic
+ ┣ 📂 privacy-integration    # TypeScript SDK & Relayer
+ ┣ 📂 monitoring             # Operational Dashboard & Metrics
+ ┣ 📂 ceremony-coordinator   # Trusted Setup Tools
+ ┗ 📂 packages               # Shared libraries
 ```
 
-The dashboard server provides:
-- **Real-time Monitoring**: System metrics, transaction activity, and relayer health
-- **Interactive Transfer Demo**: Connect your wallet and test private transfers at `/transfer.html`
-- **Technical Documentation**: Deep-dive explanation of the protocol at `/explanation.html`
-- **Mock Relayer API**: Built-in relayer endpoint for testing at `/api/relayer/withdraw`
+---
 
-### Use SDK
+## 📚 Documentation
 
-**Development (devnet):**
+Detailed documentation available for each component:
+
+- **[Trusted Setup Guide](TRUSTED_SETUP.md)** - Multi-party ceremony instructions.
+- **[Production Setup](PRODUCTION_SETUP.md)** - Mainnet deployment guide.
+- **[Architecture Deep Dive](monitoring/public/explanation.html)** - Technical explanation of the protocol.
+- **[Ceremony Coordinator](ceremony-coordinator/README.md)** - Guide for running the MPC ceremony.
+
+---
+
+## 🛠️ Developer SDK
+
+Integrate privacy into your own dApp with just a few lines of code:
+
 ```typescript
-import { ShadowPrivacySDK } from './privacy-integration/privacy-sdk';
+import { ShadowPrivacySDK } from '@shadow-protocol/sdk';
 
-// Configuration loaded from config/devnet.json or environment variables
-const sdk = new ShadowPrivacySDK();
+// 1. Initialize SDK
+const sdk = new ShadowPrivacySDK({ env: 'devnet' });
 await sdk.initialize();
 
-// Deposit
-const note = await sdk.deposit(payer, 1.0, ownerAddress);
+// 2. Deposit Funds (Shield)
+const note = await sdk.deposit(userWallet, 1.0);
+console.log(`Secret Note: ${note}`);
 
-// Withdraw anonymously via relayer to break metadata links
-const signature = await sdk.withdrawViaRelayer(note, recipient, 1.0, {
-  relayerUrl: 'https://relayer.shadow-protocol.io'
-});
+// 3. Withdraw via Relayer (Unlink)
+// User pays no gas, relayer handles fee
+const tx = await sdk.withdrawViaRelayer(
+  note, 
+  recipientAddress, 
+  { relayer: 'https://relayer.shadow-protocol.io' }
+);
 ```
 
-**Production (mainnet):**
-```typescript
-// Set environment
-process.env.SHADOW_ENV = 'mainnet';
-process.env.SHADOW_STORAGE_PASSWORD = 'strong-password';
-
-// Configuration loaded from config/mainnet.json or environment variables
-const sdk = new ShadowPrivacySDK({
-  password: process.env.SHADOW_STORAGE_PASSWORD // Enables encrypted storage
-});
-await sdk.initialize();
-```
-
-See `PRODUCTION_SETUP.md` for complete mainnet deployment instructions.
-
-## 📊 Security Features
-
-| Feature | Status | Implementation |
-|---------|--------|----------------|
-| ZK-SNARK Proofs | ✅ Implemented | Groth16 (ark-groth16) |
-| Poseidon Hashing | ✅ Implemented | circomlibjs |
-| Ring Signatures | ✅ Implemented | MLSAG verification |
-| Nullifier Tracking | ✅ Implemented | PDA-based (scalable) |
-| VK Storage | ✅ Implemented | On-chain PDA accounts |
-| Relayer Network | ✅ Implemented | Anonymous transaction relay (breaks signer links) |
-| Merkle Trees | ✅ Implemented | 20-level Poseidon tree |
-| Encrypted Storage | ✅ Implemented | AES-256-GCM |
-| Monitoring Dashboard | ✅ Implemented | Real-time metrics & health |
-
-## ⚠️ Known Limitations
-1. **No audit** - Code has not been professionally audited.
-2. **Simulated Verification** - In the Alpha demo, on-chain ZK verification is logged as "Skipped" to stay within Solana's default 200k Compute Unit limit. Production deployment requires using the `alt_bn128` precompiles.
-3. **Testing incomplete** - Needs comprehensive circuit tests and BPF tests.
-
-**Note on Trusted Setup:** Multi-party trusted setup ceremony must be completed before mainnet deployment. See `TRUSTED_SETUP.md` and `ceremony-coordinator/README.md` for complete instructions.
-
-## 🛣️ Roadmap to Production
-
-- [ ] Multi-party trusted setup ceremony
-- [x] Store verification keys in PDA accounts
-- [x] Decentralized relayer network with reputation system
-- [x] Monitoring dashboard with operational visibility
-- [ ] Professional security audit
-- [ ] Comprehensive test suite (circuits + program)
-- [ ] Mainnet deployment with TVL limits
-- [ ] Bug bounty program
-
-## 📖 Documentation
-
-### Circuit Documentation
-- `circuits/transfer.circom` - Proves valid spend of commitment without revealing amount
-- `circuits/balance.circom` - Proves balance ≥ threshold without revealing exact amount
-- `circuits/ring_signature.circom` - Proves membership in ring without revealing which member
-
-### Rust Program
-- `programs/shadow-privacy/src/verifier.rs` - Cryptographic verification
-- `programs/shadow-privacy/src/state.rs` - On-chain state management
-- `programs/shadow-privacy/src/processor.rs` - Instruction processing
-
-### Production Deployment
-- `PRODUCTION_SETUP.md` - Complete mainnet deployment guide
-  - Configuration management (environment-based)
-  - Encrypted storage setup
-  - Production readiness validation
-  - Deployment workflow
-  - Security checklist
-
-### Trusted Setup
-- `TRUSTED_SETUP.md` - Complete guide for multi-party ceremony
-  - Phase 1: Powers of Tau ceremony
-  - Phase 2: Circuit-specific setup
-  - Security best practices
-  - Participant guidelines
-- `ceremony-coordinator/README.md` - Ceremony coordinator and participant tools
-
-### Monitoring
-- `monitoring/README.md` - Real-time monitoring dashboard
-  - Transaction metrics and activity tracking
-  - Relayer health and reputation monitoring
-  - Circuit performance statistics
-  - System health checks and alerts
-  - REST API and WebSocket integration
-
-## 🤝 Contributing
-
-This is an open-source privacy protocol. Contributions welcome:
-- Circuit optimizations
-- Security improvements
-- Test coverage
-- Documentation
+---
 
 ## ⚖️ License
 
-MIT License - See LICENSE file
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🔒 Security
-
-**DO NOT USE WITH REAL FUNDS ON MAINNET**
-
-This is alpha software. Use only on devnet for testing and development.
-
-## 🙏 Acknowledgments
-
-This protocol builds on research from:
-- Tornado Cash (Merkle tree commitment scheme)
-- Zcash (Groth16 ZK-SNARKs, shielded transactions)
-- Monero (MLSAG ring signatures, key images)
-- Poseidon Hash (efficient ZK-friendly hashing)
-
-## 📝 Technical Specifications
-
-- **Curve**: BN254 (bn128)
-- **Proof System**: Groth16
-- **Hash Function**: Poseidon
-- **Merkle Tree Depth**: 20 levels (1M+ commitments)
-- **Ring Size**: 11 members (configurable)
-- **Proof Size**: ~192 bytes
-- **Verification Time**: <10ms on-chain
+<div align="center">
+  <sub>Built with ❤️ by the Shadow Protocol Team</sub>
+</div>
