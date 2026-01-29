@@ -48,13 +48,15 @@ async function main() {
     }
 
     const circuitsPath = path.resolve(__dirname, '../../../circuits/build');
-    const programId = new PublicKey('x6ofF4ZJFtXd7BTGV8UB6TBYkE2Vwx7WMmuQCvJKLUV');
+    const programId = new PublicKey('JE6No6rp9mbo4BBhwZFbnj6P4xiALuaRzQ4o9ju2fXHN');
 
     const client = new ShadowClient({
         connection,
         wallet: new MockWallet(alice),
         programId,
-        circuitsPath
+        circuitsPath,
+        monitorUrl: 'http://127.0.0.1:5000',
+        relayerUrl: 'http://127.0.0.1:5000'
     });
 
     await client.initialize();

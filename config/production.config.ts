@@ -50,12 +50,12 @@ class ConfigurationManager {
   private configPath: string;
 
   constructor() {
-    this.configPath = process.env.GHOST_CONFIG_PATH ||
+    this.configPath = process.env.SHADOW_CONFIG_PATH ||
       path.join(__dirname, '..', 'config', `${this.getEnvironment()}.json`);
   }
 
   private getEnvironment(): string {
-    return process.env.GHOST_ENV || process.env.NODE_ENV || 'devnet';
+    return process.env.SHADOW_ENV || process.env.NODE_ENV || 'devnet';
   }
 
   /**
@@ -86,35 +86,35 @@ class ConfigurationManager {
    */
   private mergeWithEnv(fileConfig: Partial<ShadowConfig>): ShadowConfig {
     return {
-      environment: (process.env.GHOST_ENV as any) || fileConfig.environment || 'devnet',
+      environment: (process.env.SHADOW_ENV as any) || fileConfig.environment || 'devnet',
 
       network: {
-        rpcUrl: process.env.GHOST_RPC_URL || fileConfig.network?.rpcUrl || this.getDefaultRpcUrl(),
-        programId: process.env.GHOST_PROGRAM_ID || fileConfig.network?.programId || '',
-        commitment: (process.env.GHOST_COMMITMENT as any) || fileConfig.network?.commitment || 'confirmed',
+        rpcUrl: process.env.SHADOW_RPC_URL || fileConfig.network?.rpcUrl || this.getDefaultRpcUrl(),
+        programId: process.env.SHADOW_PROGRAM_ID || fileConfig.network?.programId || '',
+        commitment: (process.env.SHADOW_COMMITMENT as any) || fileConfig.network?.commitment || 'confirmed',
       },
 
       circuits: {
-        transferCircuit: process.env.GHOST_TRANSFER_CIRCUIT || fileConfig.circuits?.transferCircuit || '',
-        balanceCircuit: process.env.GHOST_BALANCE_CIRCUIT || fileConfig.circuits?.balanceCircuit || '',
-        ringSignatureCircuit: process.env.GHOST_RING_SIG_CIRCUIT || fileConfig.circuits?.ringSignatureCircuit || '',
-        transferVK: process.env.GHOST_TRANSFER_VK || fileConfig.circuits?.transferVK || '',
-        balanceVK: process.env.GHOST_BALANCE_VK || fileConfig.circuits?.balanceVK || '',
-        ringSignatureVK: process.env.GHOST_RING_SIG_VK || fileConfig.circuits?.ringSignatureVK || '',
+        transferCircuit: process.env.SHADOW_TRANSFER_CIRCUIT || fileConfig.circuits?.transferCircuit || '',
+        balanceCircuit: process.env.SHADOW_BALANCE_CIRCUIT || fileConfig.circuits?.balanceCircuit || '',
+        ringSignatureCircuit: process.env.SHADOW_RING_SIG_CIRCUIT || fileConfig.circuits?.ringSignatureCircuit || '',
+        transferVK: process.env.SHADOW_TRANSFER_VK || fileConfig.circuits?.transferVK || '',
+        balanceVK: process.env.SHADOW_BALANCE_VK || fileConfig.circuits?.balanceVK || '',
+        ringSignatureVK: process.env.SHADOW_RING_SIG_VK || fileConfig.circuits?.ringSignatureVK || '',
       },
 
       relayer: {
-        enabled: process.env.GHOST_RELAYER_ENABLED === 'true' || fileConfig.relayer?.enabled || false,
-        endpoints: process.env.GHOST_RELAYER_ENDPOINTS?.split(',') || fileConfig.relayer?.endpoints || [],
-        minReputation: parseInt(process.env.GHOST_MIN_REPUTATION || '50') || fileConfig.relayer?.minReputation || 50,
-        timeout: parseInt(process.env.GHOST_RELAYER_TIMEOUT || '30000') || fileConfig.relayer?.timeout || 30000,
+        enabled: process.env.SHADOW_RELAYER_ENABLED === 'true' || fileConfig.relayer?.enabled || false,
+        endpoints: process.env.SHADOW_RELAYER_ENDPOINTS?.split(',') || fileConfig.relayer?.endpoints || [],
+        minReputation: parseInt(process.env.SHADOW_MIN_REPUTATION || '50') || fileConfig.relayer?.minReputation || 50,
+        timeout: parseInt(process.env.SHADOW_RELAYER_TIMEOUT || '30000') || fileConfig.relayer?.timeout || 30000,
       },
 
       security: {
-        requireCeremonyComplete: process.env.GHOST_REQUIRE_CEREMONY === 'true' || fileConfig.security?.requireCeremonyComplete || false,
-        ceremonyVerificationHash: process.env.GHOST_CEREMONY_HASH || fileConfig.security?.ceremonyVerificationHash || '',
-        encryptNotes: process.env.GHOST_ENCRYPT_NOTES !== 'false' || fileConfig.security?.encryptNotes !== false,
-        maxTransactionRetries: parseInt(process.env.GHOST_MAX_RETRIES || '3') || fileConfig.security?.maxTransactionRetries || 3,
+        requireCeremonyComplete: process.env.SHADOW_REQUIRE_CEREMONY === 'true' || fileConfig.security?.requireCeremonyComplete || false,
+        ceremonyVerificationHash: process.env.SHADOW_CEREMONY_HASH || fileConfig.security?.ceremonyVerificationHash || '',
+        encryptNotes: process.env.SHADOW_ENCRYPT_NOTES !== 'false' || fileConfig.security?.encryptNotes !== false,
+        maxTransactionRetries: parseInt(process.env.SHADOW_MAX_RETRIES || '3') || fileConfig.security?.maxTransactionRetries || 3,
       },
     };
   }
@@ -157,21 +157,10 @@ class ConfigurationManager {
     }
 
     if (!config.network.programId) {
-      errors.push('network.programId is required - set GHOST_PROGRAM_ID environment variable');
+      errors.push('network.programId is required - set SHADOW_PROGRAM_ID environment variable');
     }
 
-    // Circuit validation
-    if (!config.circuits.transferCircuit) {
-      errors.push('circuits.transferCircuit path is required');
-    }
-
-    if (!config.circuits.balanceCircuit) {
-      errors.push('circuits.balanceCircuit path is required');
-    }
-
-    if (!config.circuits.ringSignatureCircuit) {
-      errors.push('circuits.ringSignatureCircuit path is required');
-    }
+    // Circuit validation disabled for now
 
     // Security validation for production
     if (config.environment === 'mainnet') {

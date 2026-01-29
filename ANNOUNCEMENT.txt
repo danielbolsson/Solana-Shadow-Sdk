@@ -52,11 +52,11 @@ Building from Production Requirements
 Shadow was designed from day one for real deployments, not just demos:
 
 // Environment-based configuration
-process.env.GHOST_ENV = 'mainnet';
-process.env.GHOST_STORAGE_PASSWORD = 'strong-password';
+process.env.SHADOW_ENV = 'mainnet';
+process.env.SHADOW_STORAGE_PASSWORD = 'strong-password';
 
 const sdk = new ShadowPrivacySDK({
-  password: process.env.GHOST_STORAGE_PASSWORD
+  password: process.env.SHADOW_STORAGE_PASSWORD
 });
 
 // Encrypted AES-256-GCM storage
@@ -213,7 +213,7 @@ Deployment Safety: Automated Validation
 
 Before any mainnet deployment, Shadow's readiness checker validates everything:
 
-GHOST_ENV=mainnet ts-node scripts/production-readiness-check.ts
+SHADOW_ENV=mainnet ts-node scripts/production-readiness-check.ts
 
 Checks performed:
 ✓ Configuration: Environment set to mainnet, program ID configured, RPC URL correct

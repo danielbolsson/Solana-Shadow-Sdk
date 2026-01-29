@@ -11,6 +11,8 @@ import cors from 'cors';
 import { MetricsCollector } from './metrics-collector';
 import config from '../config/production.config';
 import * as path from 'path';
+import { Connection, Keypair, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js';
+import * as fs from 'fs';
 
 const app = express();
 const httpServer = createServer(app);
@@ -115,6 +117,90 @@ app.post('/api/metrics/relayer-activity', (req, res) => {
   res.json({ success: true });
 });
 
+/**
+ * Mock Relayer Endpoint (vulnerable for demo)
+ */
+app.post('/api/relayer/withdraw', async (req, res) => {
+  const { poolAddress, vaultAddress, recipient, vkAddress, proof, commitment, nullifier, amount } = req.body;
+  console.log('\n🔗 [RELAYER] Received withdraw request...');
+  console.log(`   Transferring ${amount} lamports to ${recipient}`);
+
+  try {
+    const connection = new Connection(cfg.network.rpcUrl, 'confirmed');
+
+    // Use the pre-funded relayer keypair
+    const relayerKeypair = Keypair.fromSecretKey(
+      Uint8Array.from(JSON.parse(fs.readFileSync('/home/daniel/.config/solana/relayer.json', 'utf-8')))
+    );
+    console.log(`   [RELAYER] Relayer Address: ${relayerKeypair.publicKey.toBase58()}`);
+    console.log(`   [RELAYER] Relayer Balance: ${(await connection.getBalance(relayerKeypair.publicKey)) / 1e9} SOL`);
+
+    // Correct Borsh serialization for Withdraw instruction (Enum index 2)
+    const proofBuffer = Buffer.from(proof, 'hex');
+    const data = Buffer.alloc(1 + 4 + proofBuffer.length + 32 + 32 + 1 + 32 + 8);
+
+    let offset = 0;
+    data.writeUInt8(2, offset); // Discriminator (Withdraw = 2)
+    offset += 1;
+
+    data.writeUInt32LE(proofBuffer.length, offset); // Proof length
+    offset += 4;
+    proofBuffer.copy(data, offset);
+    offset += proofBuffer.length;
+
+    Buffer.from(commitment, 'hex').copy(data, offset); // Root/Commitment
+    offset += 32;
+
+    Buffer.from(nullifier, 'hex').copy(data, offset); // Nullifier
+    offset += 32;
+
+    data.writeUInt8(0, offset); // Option<NewCommitment> = None
+    offset += 1;
+
+    new PublicKey(recipient).toBuffer().copy(data, offset); // Recipient
+    offset += 32;
+
+    data.writeBigUInt64LE(BigInt(amount), offset); // Amount
+
+    const instruction = new TransactionInstruction({
+      keys: [
+        { pubkey: new PublicKey(poolAddress), isSigner: false, isWritable: true },
+        { pubkey: new PublicKey(vaultAddress), isSigner: false, isWritable: true },
+        { pubkey: new PublicKey(recipient), isSigner: false, isWritable: true },
+        { pubkey: new PublicKey(vkAddress), isSigner: false, isWritable: false },
+        { pubkey: new PublicKey('11111111111111111111111111111111'), isSigner: false, isWritable: false },
+      ],
+      programId: new PublicKey(cfg.network.programId),
+      data: data
+    });
+
+    const transaction = new Transaction().add(instruction);
+    const { blockhash } = await connection.getLatestBlockhash();
+    transaction.recentBlockhash = blockhash;
+    transaction.feePayer = relayerKeypair.publicKey;
+
+    transaction.sign(relayerKeypair);
+
+    const signature = await connection.sendRawTransaction(transaction.serialize());
+    await connection.confirmTransaction(signature);
+
+    console.log(`✅ [RELAYER] Transaction successful: ${signature}`);
+
+    // Record activity
+    metricsCollector.recordRelayerActivity(
+      `http://localhost:${PORT}/api/relayer`,
+      1200,
+      true,
+      0.01 // 1% fee
+    );
+
+    res.json({ signature });
+  } catch (error) {
+    console.error('❌ [RELAYER] Withdrawal failed:', error);
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
 // WebSocket connection handling
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
@@ -151,15 +237,12 @@ const PORT = process.env.MONITOR_PORT || 5000;
 
 httpServer.listen(PORT, () => {
   console.log('\n');
-  console.log('   ▄████  ██░ ██  ▒█████    ██████ ▄▄▄█████▓');
-  console.log('  ██▒ ▀█▒▓██░ ██▒▒██▒  ██▒▒██    ▒ ▓  ██▒ ▓▒');
-  console.log(' ▒██░▄▄▄░▒██▀▀██░▒██░  ██▒░ ▓██▄   ▒ ▓██░ ▒░');
-  console.log(' ░▓█  ██▓░▓█ ░██ ▒██   ██░  ▒   ██▒░ ▓██▓ ░ ');
-  console.log(' ░▒▓███▀▒░▓█▒░██▓░ ████▓▒░▒██████▒▒  ▒██▒ ░ ');
-  console.log('  ░▒   ▒  ▒ ░░▒░▒░ ▒░▒░▒░ ▒ ▒▓▒ ▒ ░  ▒ ░░   ');
-  console.log('   ░   ░  ▒ ░▒░ ░  ░ ▒ ▒░ ░ ░▒  ░ ░    ░    ');
-  console.log(' ░ ░   ░  ░  ░░ ░░ ░ ░ ▒  ░  ░  ░    ░      ');
-  console.log('       ░  ░  ░  ░    ░ ░        ░           ');
+  console.log('  ███████╗██╗  ██╗ █████╗ ██████╗  ██████╗ ██╗    ██╗');
+  console.log('  ██╔════╝██║  ██║██╔══██╗██╔══██╗██╔═══██╗██║    ██║');
+  console.log('  ███████╗███████║███████║██║  ██║██║   ██║██║ █╗ ██║');
+  console.log('  ╚════██║██╔══██║██╔══██║██║  ██║██║   ██║██║███╗██║');
+  console.log('  ███████║██║  ██║██║  ██║██████╔╝╚██████╔╝╚███╔███╔╝');
+  console.log('  ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝  ╚═════╝  ╚══╝╚══╝ ');
   console.log('\n');
   console.log('========================================');
   console.log('Shadow Privacy - Monitoring Dashboard');

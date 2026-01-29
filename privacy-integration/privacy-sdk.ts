@@ -41,7 +41,7 @@ export class ShadowPrivacySDK {
       network: configOverride?.network || prodConfig.environment,
       dataDir: configOverride?.dataDir || './data',
       relayerUrl: configOverride?.relayerUrl,
-      password: configOverride?.password || process.env.GHOST_STORAGE_PASSWORD,
+      password: configOverride?.password || process.env.SHADOW_STORAGE_PASSWORD,
     };
 
     // Initialize components

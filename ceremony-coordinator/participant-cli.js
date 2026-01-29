@@ -31,15 +31,12 @@ if (!fs.existsSync(DATA_DIR)) {
 
 async function main() {
   console.log('\n');
-  console.log('   ▄████  ██░ ██  ▒█████    ██████ ▄▄▄█████▓');
-  console.log('  ██▒ ▀█▒▓██░ ██▒▒██▒  ██▒▒██    ▒ ▓  ██▒ ▓▒');
-  console.log(' ▒██░▄▄▄░▒██▀▀██░▒██░  ██▒░ ▓██▄   ▒ ▓██░ ▒░');
-  console.log(' ░▓█  ██▓░▓█ ░██ ▒██   ██░  ▒   ██▒░ ▓██▓ ░ ');
-  console.log(' ░▒▓███▀▒░▓█▒░██▓░ ████▓▒░▒██████▒▒  ▒██▒ ░ ');
-  console.log('  ░▒   ▒  ▒ ░░▒░▒░ ▒░▒░▒░ ▒ ▒▓▒ ▒ ░  ▒ ░░   ');
-  console.log('   ░   ░  ▒ ░▒░ ░  ░ ▒ ▒░ ░ ░▒  ░ ░    ░    ');
-  console.log(' ░ ░   ░  ░  ░░ ░░ ░ ░ ▒  ░  ░  ░    ░      ');
-  console.log('       ░  ░  ░  ░    ░ ░        ░           ');
+  console.log('  ███████╗██╗  ██╗ █████╗ ██████╗  ██████╗ ██╗    ██╗');
+  console.log('  ██╔════╝██║  ██║██╔══██╗██╔══██╗██╔═══██╗██║    ██║');
+  console.log('  ███████╗███████║███████║██║  ██║██║   ██║██║ █╗ ██║');
+  console.log('  ╚════██║██╔══██║██╔══██║██║  ██║██║   ██║██║███╗██║');
+  console.log('  ███████║██║  ██║██║  ██║██████╔╝╚██████╔╝╚███╔███╔╝');
+  console.log('  ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝  ╚═════╝  ╚══╝╚══╝ ');
   console.log('\n');
   console.log('========================================');
   console.log('Shadow Privacy - Ceremony Participant');
@@ -137,7 +134,7 @@ async function checkStatus() {
     console.log(`\nParticipants:`);
     status.participants.forEach((p, i) => {
       const status = p.verified ? '✓' : '⏳';
-      console.log(`  ${i + 1}. ${status} ${p.name} ${p.verified ? `(${p.hash.substring(0,8)}...)` : ''}`);
+      console.log(`  ${i + 1}. ${status} ${p.name} ${p.verified ? `(${p.hash.substring(0, 8)}...)` : ''}`);
     });
 
   } catch (error) {

@@ -11,9 +11,9 @@ echo "========================================="
 echo ""
 
 # Check environment
-if [ "$GHOST_ENV" != "mainnet" ]; then
-  echo "ERROR: GHOST_ENV must be set to 'mainnet'"
-  echo "Current: $GHOST_ENV"
+if [ "$SHADOW_ENV" != "mainnet" ]; then
+  echo "ERROR: SHADOW_ENV must be set to 'mainnet'"
+  echo "Current: $SHADOW_ENV"
   exit 1
 fi
 

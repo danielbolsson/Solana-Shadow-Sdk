@@ -170,11 +170,25 @@ export class MetricsCollector {
    */
   private async collectPoolMetrics() {
     try {
-      // Query pool account
-      // This is placeholder - implement actual on-chain queries
+      // Query all program accounts to calculate TVL
+      const accounts = await this.connection.getProgramAccounts(this.programId);
+
+      let totalValueLocked = 0;
+      let activeCommitments = 0;
+
+      for (const account of accounts) {
+        // Vault accounts hold the SOL
+        // In a real implementation, we would parse account data to distinguish types
+        totalValueLocked += account.account.lamports;
+
+        // Count commitments (this is a heuristic for the demo)
+        // In production, we would query the Merkle Tree accounts
+        activeCommitments++;
+      }
+
       return {
-        totalValueLocked: 0,
-        activeCommitments: 0,
+        totalValueLocked,
+        activeCommitments,
         spentNullifiers: 0,
         merkleTreeDepth: 20
       };
@@ -393,14 +407,23 @@ export class MetricsCollector {
 
     // Check relayers
     const onlineRelayers = Array.from(this.relayerMetrics.values()).filter(r => r.status === 'online').length;
+    const isLocalnet = process.env.SHADOW_ENV === 'localnet';
+    const isDevnet = process.env.SHADOW_ENV === 'devnet';
+    const isTestEnv = isLocalnet || isDevnet;
+
     if (onlineRelayers === 0) {
-      checks.push({ name: 'Relayers', status: 'critical', message: 'No relayers online' });
-      criticalCount++;
-    } else if (onlineRelayers < 3) {
+      if (isLocalnet) {
+        checks.push({ name: 'Relayers', status: 'healthy', message: 'No relayers required for localnet' });
+      } else {
+        checks.push({ name: 'Relayers', status: 'critical', message: 'No relayers online' });
+        criticalCount++;
+      }
+    } else if (onlineRelayers < 3 && !isTestEnv) {
+      // Only mark as degraded in production if less than 3 relayers
       checks.push({ name: 'Relayers', status: 'degraded', message: `Only ${onlineRelayers} relayers online` });
       degradedCount++;
     } else {
-      checks.push({ name: 'Relayers', status: 'healthy', message: `${onlineRelayers} relayers online` });
+      checks.push({ name: 'Relayers', status: 'healthy', message: `${onlineRelayers} relayer${onlineRelayers > 1 ? 's' : ''} online` });
     }
 
     // Determine overall status

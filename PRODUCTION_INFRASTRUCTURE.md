@@ -48,12 +48,12 @@ const loadedNotes = await storage.loadNotes(password);
 
 **Environment Variables:**
 ```bash
-GHOST_ENV=mainnet
-GHOST_RPC_URL=https://api.mainnet-beta.solana.com
-GHOST_PROGRAM_ID=<program_id>
-GHOST_REQUIRE_CEREMONY=true
-GHOST_CEREMONY_HASH=<hash>
-GHOST_STORAGE_PASSWORD=<password>
+SHADOW_ENV=mainnet
+SHADOW_RPC_URL=https://api.mainnet-beta.solana.com
+SHADOW_PROGRAM_ID=<program_id>
+SHADOW_REQUIRE_CEREMONY=true
+SHADOW_CEREMONY_HASH=<hash>
+SHADOW_STORAGE_PASSWORD=<password>
 ```
 
 ### 3. Production Readiness Validation
@@ -109,9 +109,9 @@ Comprehensive pre-deployment validation covering:
 **Usage:**
 ```typescript
 // Production
-process.env.GHOST_ENV = 'mainnet';
+process.env.SHADOW_ENV = 'mainnet';
 const sdk = new ShadowPrivacySDK({
-  password: process.env.GHOST_STORAGE_PASSWORD
+  password: process.env.SHADOW_STORAGE_PASSWORD
 });
 
 // Development
@@ -148,7 +148,7 @@ Automated deployment workflow:
 
 **Usage:**
 ```bash
-GHOST_ENV=mainnet bash scripts/deploy-mainnet.sh
+SHADOW_ENV=mainnet bash scripts/deploy-mainnet.sh
 ```
 
 ### 7. Security Hardening
@@ -197,7 +197,7 @@ Additional patterns to prevent sensitive data leakage:
 
 - [ ] Complete trusted setup ceremony with 3+ participants
 - [ ] Publish ceremony transcript
-- [ ] Set GHOST_ENV=mainnet
+- [ ] Set SHADOW_ENV=mainnet
 - [ ] Configure production RPC URL
 - [ ] Set deployed program ID
 - [ ] Set ceremony verification hash
@@ -235,7 +235,7 @@ Additional patterns to prevent sensitive data leakage:
 ```
 User/Deployment Script
         ↓
-Environment Variables (GHOST_*)
+Environment Variables (SHADOW_*)
         ↓
 production.config.ts → Load & Validate
         ↓
@@ -274,8 +274,8 @@ All Critical Checks Pass?
 ### Test Configuration System
 ```typescript
 // Set environment
-process.env.GHOST_ENV = 'mainnet';
-process.env.GHOST_PROGRAM_ID = 'test123...';
+process.env.SHADOW_ENV = 'mainnet';
+process.env.SHADOW_PROGRAM_ID = 'test123...';
 
 // Load config
 import config from './config/production.config';
@@ -303,10 +303,10 @@ console.log(notes.length); // 2
 ### Test Production Readiness
 ```bash
 # Should fail without proper setup
-GHOST_ENV=mainnet ts-node scripts/production-readiness-check.ts
+SHADOW_ENV=mainnet ts-node scripts/production-readiness-check.ts
 
 # Should pass after setup
-GHOST_ENV=devnet ts-node scripts/production-readiness-check.ts
+SHADOW_ENV=devnet ts-node scripts/production-readiness-check.ts
 ```
 
 ## Maintenance

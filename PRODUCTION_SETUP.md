@@ -18,26 +18,26 @@ Create a `.env` file (NEVER commit this):
 
 ```bash
 # Network
-GHOST_ENV=mainnet
-GHOST_RPC_URL=https://api.mainnet-beta.solana.com
-GHOST_PROGRAM_ID=<YOUR_DEPLOYED_PROGRAM_ID>
-GHOST_COMMITMENT=finalized
+SHADOW_ENV=mainnet
+SHADOW_RPC_URL=https://api.mainnet-beta.solana.com
+SHADOW_PROGRAM_ID=<YOUR_DEPLOYED_PROGRAM_ID>
+SHADOW_COMMITMENT=finalized
 
 # Circuits (from ceremony output)
-GHOST_TRANSFER_CIRCUIT=./circuits/build/transfer_final.zkey
-GHOST_BALANCE_CIRCUIT=./circuits/build/balance_final.zkey
-GHOST_RING_SIG_CIRCUIT=./circuits/build/ring_signature_final.zkey
+SHADOW_TRANSFER_CIRCUIT=./circuits/build/transfer_final.zkey
+SHADOW_BALANCE_CIRCUIT=./circuits/build/balance_final.zkey
+SHADOW_RING_SIG_CIRCUIT=./circuits/build/ring_signature_final.zkey
 
 # Security
-GHOST_REQUIRE_CEREMONY=true
-GHOST_CEREMONY_HASH=<HASH_FROM_CEREMONY_TRANSCRIPT>
-GHOST_ENCRYPT_NOTES=true
-GHOST_STORAGE_PASSWORD=<STRONG_PASSWORD>
+SHADOW_REQUIRE_CEREMONY=true
+SHADOW_CEREMONY_HASH=<HASH_FROM_CEREMONY_TRANSCRIPT>
+SHADOW_ENCRYPT_NOTES=true
+SHADOW_STORAGE_PASSWORD=<STRONG_PASSWORD>
 
 # Relayer
-GHOST_RELAYER_ENABLED=true
-GHOST_RELAYER_ENDPOINTS=https://relayer1.example.com,https://relayer2.example.com
-GHOST_MIN_REPUTATION=75
+SHADOW_RELAYER_ENABLED=true
+SHADOW_RELAYER_ENDPOINTS=https://relayer1.example.com,https://relayer2.example.com
+SHADOW_MIN_REPUTATION=75
 ```
 
 ### 2. Configuration File
@@ -100,7 +100,7 @@ See `TRUSTED_SETUP.md` for complete ceremony instructions.
 ### 2. Run Production Readiness Check
 
 ```bash
-GHOST_ENV=mainnet ts-node scripts/production-readiness-check.ts
+SHADOW_ENV=mainnet ts-node scripts/production-readiness-check.ts
 ```
 
 This validates:
@@ -140,7 +140,7 @@ Update `config/mainnet.json` or environment variables with:
 Use the deployment script:
 
 ```bash
-GHOST_ENV=mainnet bash scripts/deploy-mainnet.sh
+SHADOW_ENV=mainnet bash scripts/deploy-mainnet.sh
 ```
 
 This runs all checks and deploys if validation passes.
@@ -154,7 +154,7 @@ import { ShadowPrivacySDK } from './privacy-integration/privacy-sdk';
 
 // Configuration loaded automatically from environment or config file
 const sdk = new ShadowPrivacySDK({
-  password: process.env.GHOST_STORAGE_PASSWORD // For encrypted storage
+  password: process.env.SHADOW_STORAGE_PASSWORD // For encrypted storage
 });
 
 await sdk.initialize();
@@ -182,7 +182,7 @@ const sdk = new ShadowPrivacySDK();
 - [ ] Ceremony transcript published and verified
 - [ ] All keys from ceremony securely deleted
 - [ ] Note encryption enabled (`encryptNotes: true`)
-- [ ] Storage password set (`GHOST_STORAGE_PASSWORD`)
+- [ ] Storage password set (`SHADOW_STORAGE_PASSWORD`)
 - [ ] Ceremony verification required (`requireCeremonyComplete: true`)
 - [ ] Configuration uses environment variables (no hardcoded values)
 - [ ] Mainnet RPC URL configured
@@ -197,13 +197,13 @@ Use different configurations for each environment:
 
 ```bash
 # Development
-GHOST_ENV=devnet npm start
+SHADOW_ENV=devnet npm start
 
 # Testnet
-GHOST_ENV=testnet npm start
+SHADOW_ENV=testnet npm start
 
 # Production
-GHOST_ENV=mainnet npm start
+SHADOW_ENV=mainnet npm start
 ```
 
 ## Monitoring

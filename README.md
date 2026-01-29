@@ -105,25 +105,23 @@ See `ceremony-coordinator/README.md` for complete setup and usage guide.
 
 ### Deploy Program
 ```bash
-cd programs/ghost-privacy
+cd programs/shadow-privacy
 cargo build-bpf
-solana program deploy target/deploy/ghost_privacy.so
+solana program deploy target/deploy/shadow_privacy.so
 ```
 
-### Start Relayer
-```bash
-cd privacy-integration
-npx ts-node relayer-service.ts
-```
-
-### Start Monitoring Dashboard
+### Start Monitoring Dashboard & Relayer
 ```bash
 cd monitoring
 npm install
-npm start  # Dashboard on http://localhost:5000
+npx ts-node dashboard-server.ts  # Integrated server on http://localhost:5000
 ```
 
-Real-time metrics, relayer health, circuit performance, and system monitoring.
+The dashboard server provides:
+- **Real-time Monitoring**: System metrics, transaction activity, and relayer health
+- **Interactive Transfer Demo**: Connect your wallet and test private transfers at `/transfer.html`
+- **Technical Documentation**: Deep-dive explanation of the protocol at `/explanation.html`
+- **Mock Relayer API**: Built-in relayer endpoint for testing at `/api/relayer/withdraw`
 
 ### Use SDK
 

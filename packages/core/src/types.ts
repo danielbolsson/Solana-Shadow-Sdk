@@ -5,6 +5,8 @@ export interface ShadowClientConfig {
   wallet: any; // Wallet adapter
   programId: PublicKey;
   circuitsPath?: string;
+  monitorUrl?: string;
+  relayerUrl?: string;
 }
 
 export interface Commitment {

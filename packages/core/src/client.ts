@@ -33,12 +33,17 @@ export class ShadowClient {
   private commitments: Map<string, Commitment>;
   private nullifiers: Set<string>;
   public currentPoolAddress: PublicKey | null = null;
+  private monitorUrl: string | null = null;
+  private relayerUrl: string | null = null;
 
   constructor(config: ShadowClientConfig) {
     this.connection = config.connection;
     this.wallet = config.wallet;
     this.programId = config.programId || SHADOW_PROGRAM_ID;
     this.circuitsPath = config.circuitsPath || './circuits/build';
+    this.monitorUrl = config.monitorUrl || null;
+    this.relayerUrl = config.relayerUrl || null;
+    this.relayerUrl = config.relayerUrl || null;
     this.commitments = new Map();
     this.nullifiers = new Set();
     this.privateKey = randomBytes(32);
@@ -96,9 +101,6 @@ export class ShadowClient {
     };
   }
 
-  /**
-   * Generate nullifier (prevents double-spending)
-   */
   async generateNullifier(commitment: Commitment): Promise<Nullifier> {
     // nullifier = H(commitment, privateKey)
     const nullifier = this.poseidon([
@@ -115,6 +117,25 @@ export class ShadowClient {
   }
 
   /**
+   * Record metrics to the monitoring dashboard
+   */
+  private async recordMetric(endpoint: string, data: any): Promise<void> {
+    if (!this.monitorUrl) return;
+
+    try {
+      await fetch(`${this.monitorUrl}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+    } catch (error) {
+      console.warn('Failed to report metrics to dashboard:', error);
+    }
+  }
+
+  /**
    * Generate ZK proof for private transfer
    */
   async generateTransferProof(params: {
@@ -124,79 +145,95 @@ export class ShadowClient {
     nullifier: string;
   }): Promise<ZKProof> {
     console.log('🔐 Generating ZK proof...');
-
-    // Generate random mock oldNonce for simulation
-    const oldNonceBytes = randomBytes(32);
-    const oldNonce = BigInt('0x' + Buffer.from(oldNonceBytes).toString('hex'));
-
-    // Calculate Mock Root
-    const publicKeyHash = this.poseidon([BigInt('0x' + Buffer.from(this.privateKey).toString('hex'))]);
-    const oldCommitmentFn = this.poseidon([
-      this.poseidon.F.toObject(publicKeyHash),
-      params.amount,
-      oldNonce
-    ]);
-    let mockRoot = this.poseidon.F.toObject(oldCommitmentFn);
-    for (let i = 0; i < MERKLE_TREE_DEPTH; i++) {
-      mockRoot = this.poseidon.F.toObject(this.poseidon([mockRoot, 0n]));
-    }
-
-    // Calculate Mock Nullifier
-    const mockNullifier = this.poseidon([
-      this.poseidon.F.toObject(oldCommitmentFn),
-      BigInt('0x' + Buffer.from(this.privateKey).toString('hex'))
-    ]);
-
-    // Generate random nonce for new commitment
-    const nonceBytes = randomBytes(32);
-    const nonce = BigInt('0x' + Buffer.from(nonceBytes).toString('hex'));
-
-    const newCommitmentFn = this.poseidon([
-      BigInt('0x' + new PublicKey(params.recipient).toBuffer().toString('hex')),
-      params.amount,
-      nonce
-    ]);
-    const mockNewCommitment = this.poseidon.F.toObject(newCommitmentFn);
-
-    // Circuit inputs
-    const input = {
-      // Public inputs
-      root: '0x' + mockRoot.toString(16),
-      nullifier: '0x' + this.poseidon.F.toObject(mockNullifier).toString(16),
-      newCommitment: '0x' + mockNewCommitment.toString(16),
-
-      // Private inputs
-      amount: params.amount.toString(),
-      privateKey: '0x' + Buffer.from(this.privateKey).toString('hex'),
-      recipientPublicKey: '0x' + new PublicKey(params.recipient).toBuffer().toString('hex'),
-      nonce: '0x' + Buffer.from(nonceBytes).toString('hex'),
-      oldNonce: '0x' + Buffer.from(oldNonceBytes).toString('hex'),
-
-      // Merkle proof (simplified - would be actual path in production)
-      pathElements: Array(MERKLE_TREE_DEPTH).fill('0'),
-      pathIndices: Array(MERKLE_TREE_DEPTH).fill(0),
-    };
-
-    // Generate proof using snarkjs
+    const startTime = Date.now();
     try {
-      const { proof, publicSignals } = await snarkjs.groth16.fullProve(
-        input,
-        `${this.circuitsPath}/transfer.wasm`,
-        `${this.circuitsPath}/transfer_final.zkey`
-      );
+      // Generate random mock oldNonce for simulation
+      const oldNonceBytes = randomBytes(32);
+      const oldNonce = BigInt('0x' + Buffer.from(oldNonceBytes).toString('hex'));
 
-      // Convert proof to bytes
-      const proofBytes = this.serializeProof(proof);
+      // Calculate Mock Root
+      const publicKeyHash = this.poseidon([BigInt('0x' + Buffer.from(this.privateKey).toString('hex'))]);
+      const oldCommitmentFn = this.poseidon([
+        this.poseidon.F.toObject(publicKeyHash),
+        params.amount,
+        oldNonce
+      ]);
+      let mockRoot = this.poseidon.F.toObject(oldCommitmentFn);
+      for (let i = 0; i < MERKLE_TREE_DEPTH; i++) {
+        mockRoot = this.poseidon.F.toObject(this.poseidon([mockRoot, 0n]));
+      }
 
-      console.log('✅ ZK proof generated');
-      console.log('   Proof size:', proofBytes.length, 'bytes');
+      // Calculate Mock Nullifier
+      const mockNullifier = this.poseidon([
+        this.poseidon.F.toObject(oldCommitmentFn),
+        BigInt('0x' + Buffer.from(this.privateKey).toString('hex'))
+      ]);
 
-      return {
-        proof: proofBytes,
-        publicSignals,
+      // Generate random nonce for new commitment
+      const nonceBytes = randomBytes(32);
+      const nonce = BigInt('0x' + Buffer.from(nonceBytes).toString('hex'));
+
+      const newCommitmentFn = this.poseidon([
+        BigInt('0x' + new PublicKey(params.recipient).toBuffer().toString('hex')),
+        params.amount,
+        nonce
+      ]);
+      const mockNewCommitment = this.poseidon.F.toObject(newCommitmentFn);
+
+      // Circuit inputs
+      const input = {
+        // Public inputs
+        root: '0x' + mockRoot.toString(16),
+        nullifier: '0x' + this.poseidon.F.toObject(mockNullifier).toString(16),
+        newCommitment: '0x' + mockNewCommitment.toString(16),
+
+        // Private inputs
+        amount: params.amount.toString(),
+        privateKey: '0x' + Buffer.from(this.privateKey).toString('hex'),
+        recipientPublicKey: '0x' + new PublicKey(params.recipient).toBuffer().toString('hex'),
+        nonce: '0x' + Buffer.from(nonceBytes).toString('hex'),
+        oldNonce: '0x' + Buffer.from(oldNonceBytes).toString('hex'),
+
+        // Merkle proof (simplified - would be actual path in production)
+        pathElements: Array(MERKLE_TREE_DEPTH).fill('0'),
+        pathIndices: Array(MERKLE_TREE_DEPTH).fill(0),
       };
+
+      // Generate proof using snarkjs
+      try {
+        const { proof, publicSignals } = await snarkjs.groth16.fullProve(
+          input,
+          `${this.circuitsPath}/transfer.wasm`,
+          `${this.circuitsPath}/transfer_final.zkey`
+        );
+
+        // Convert proof to bytes
+        const proofBytes = this.serializeProof(proof);
+
+        console.log('✅ ZK proof generated');
+        console.log('   Proof size:', proofBytes.length, 'bytes');
+
+        await this.recordMetric('/api/metrics/circuit-proving', {
+          circuitName: 'transfer',
+          provingTime: Date.now() - startTime,
+          success: true
+        });
+
+        return {
+          proof: proofBytes,
+          publicSignals,
+        };
+      } catch (error) {
+        console.error('❌ Failed to generate proof:', error);
+        await this.recordMetric('/api/metrics/circuit-proving', {
+          circuitName: 'transfer',
+          provingTime: Date.now() - startTime,
+          success: false
+        });
+        throw error;
+      }
     } catch (error) {
-      console.error('❌ Failed to generate proof:', error);
+      console.error('❌ Error in proof generation flow:', error);
       throw error;
     }
   }
@@ -373,8 +410,41 @@ export class ShadowClient {
         recipientPubkey
       ),
     });
+    // Send transaction (Directly or via Relayer)
+    if (this.relayerUrl) {
+      console.log('🔗 Sending transaction via Relayer...');
+      const response = await fetch(`${this.relayerUrl}/api/relayer/withdraw`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          poolAddress: poolAddress.toBase58(),
+          vaultAddress: vaultAddress.toBase58(),
+          recipient: params.recipient,
+          vkAddress: vkAddress.toBase58(),
+          proof: Buffer.from(proof.proof).toString('hex'),
+          commitment: Buffer.from(commitment.value).toString('hex'),
+          nullifier: Buffer.from(nullifier.value).toString('hex'),
+          amount: params.amount.toString(),
+        }),
+      });
 
-    // Send transaction
+      if (!response.ok) {
+        throw new Error(`Relayed withdrawal failed: ${await response.text()}`);
+      }
+
+      const { signature } = await response.json() as any;
+
+      // Mark as spent
+      this.nullifiers.add(nullifierKey);
+      this.commitments.delete(Buffer.from(commitment.value).toString('hex'));
+
+      console.log('✅ Withdrawal successful (Relayed)!');
+      console.log('   Signature:', signature);
+      return signature;
+    }
+
     const transaction = new Transaction().add(instruction);
     const signature = await this.sendAndConfirm(transaction);
 
@@ -448,6 +518,7 @@ export class ShadowClient {
       privateKey: '0x' + Buffer.from(this.privateKey).toString('hex'),
     };
 
+    const startTime = Date.now();
     try {
       const { proof, publicSignals } = await snarkjs.groth16.fullProve(
         input,
@@ -459,12 +530,23 @@ export class ShadowClient {
 
       console.log('✅ Balance proof generated');
 
+      await this.recordMetric('/api/metrics/circuit-proving', {
+        circuitName: 'balance',
+        provingTime: Date.now() - startTime,
+        success: true
+      });
+
       return {
         proof: proofBytes,
         publicSignals,
       };
     } catch (error) {
       console.error('❌ Failed to generate balance proof:', error);
+      await this.recordMetric('/api/metrics/circuit-proving', {
+        circuitName: 'balance',
+        provingTime: Date.now() - startTime,
+        success: false
+      });
       throw error;
     }
   }
