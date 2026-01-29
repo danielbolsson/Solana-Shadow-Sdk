@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "privacyMode": "full",
-  "programId": "3wiFPaYTQZZD71rd4pohPRr8JaFaGN3XaNWLoGSk31Ck",
+  "programId": "x6ofF4ZJFtXd7BTGV8UB6TBYkE2Vwx7WMmuQCvJKLUV",
   "features": {
     "clientSideEncryption": true,
     "commitments": true,

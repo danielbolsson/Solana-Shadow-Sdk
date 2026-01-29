@@ -320,10 +320,10 @@ Poor entropy sources (AVOID):
 Anyone can verify the ceremony was performed correctly:
 
 ```bash
-# 1. Download published parameters
-wget https://setup.ghostprivacy.io/transfer_final.zkey
-wget https://setup.ghostprivacy.io/pot20_final.ptau
-wget https://setup.ghostprivacy.io/transfer.r1cs
+# 1. Download published parameters (webserver, ipfs, ftp...)
+- transfer_final.zkey
+- pot20_final.ptau
+- transfer.r1cs
 
 # 2. Verify integrity
 snarkjs zkey verify transfer.r1cs pot20_final.ptau transfer_final.zkey
