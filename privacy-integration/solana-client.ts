@@ -1,6 +1,6 @@
 /**
  * Solana Transaction Builder for Privacy Operations
- * Interacts with deployed Ghost Privacy program
+ * Interacts with deployed Shadow Privacy program
  */
 
 import {

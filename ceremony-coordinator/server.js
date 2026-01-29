@@ -1,5 +1,5 @@
 /**
- * Ghost Privacy - Trusted Setup Ceremony Coordinator
+ * Shadow Privacy - Trusted Setup Ceremony Coordinator
  *
  * Production ceremony coordinator for real multi-party participation
  * Handles file uploads, verification, and participant management
@@ -383,7 +383,7 @@ app.listen(PORT, () => {
   console.log('       ░  ░  ░  ░    ░ ░        ░           ');
   console.log('\n');
   console.log('========================================');
-  console.log('Ghost Privacy - Ceremony Coordinator');
+  console.log('Shadow Privacy - Ceremony Coordinator');
   console.log('========================================');
   console.log(`Server running on http://localhost:${PORT}`);
   console.log(`\nCurrent phase: ${ceremonyState.phase}`);

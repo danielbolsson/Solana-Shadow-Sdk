@@ -1,7 +1,7 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::pubkey::Pubkey;
 
-/// Instructions supported by the Ghost Privacy program
+/// Instructions supported by the Shadow Privacy program
 #[derive(BorshSerialize, BorshDeserialize, Debug, Clone)]
 pub enum PrivacyInstruction {
     /// Initialize privacy pool

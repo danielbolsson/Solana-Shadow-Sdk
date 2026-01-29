@@ -37,7 +37,7 @@ export interface SecurityConfig {
   maxTransactionRetries: number;
 }
 
-export interface GhostConfig {
+export interface ShadowConfig {
   network: NetworkConfig;
   circuits: CircuitConfig;
   relayer: RelayerConfig;
@@ -46,7 +46,7 @@ export interface GhostConfig {
 }
 
 class ConfigurationManager {
-  private config: GhostConfig | null = null;
+  private config: ShadowConfig | null = null;
   private configPath: string;
 
   constructor() {
@@ -61,7 +61,7 @@ class ConfigurationManager {
   /**
    * Load configuration
    */
-  load(): GhostConfig {
+  load(): ShadowConfig {
     if (this.config) {
       return this.config;
     }
@@ -84,7 +84,7 @@ class ConfigurationManager {
   /**
    * Merge file config with environment variables (env takes precedence)
    */
-  private mergeWithEnv(fileConfig: Partial<GhostConfig>): GhostConfig {
+  private mergeWithEnv(fileConfig: Partial<ShadowConfig>): ShadowConfig {
     return {
       environment: (process.env.GHOST_ENV as any) || fileConfig.environment || 'devnet',
 
@@ -122,7 +122,7 @@ class ConfigurationManager {
   /**
    * Load configuration entirely from environment variables
    */
-  private loadFromEnv(): GhostConfig {
+  private loadFromEnv(): ShadowConfig {
     return this.mergeWithEnv({});
   }
 
@@ -148,7 +148,7 @@ class ConfigurationManager {
   /**
    * Validate configuration
    */
-  private validate(config: GhostConfig): void {
+  private validate(config: ShadowConfig): void {
     const errors: string[] = [];
 
     // Network validation
@@ -226,7 +226,7 @@ class ConfigurationManager {
   /**
    * Get config value safely
    */
-  get<K extends keyof GhostConfig>(key: K): GhostConfig[K] {
+  get<K extends keyof ShadowConfig>(key: K): ShadowConfig[K] {
     const config = this.load();
     return config[key];
   }
@@ -249,7 +249,7 @@ class ConfigurationManager {
   /**
    * Reload configuration (useful after config file changes)
    */
-  reload(): GhostConfig {
+  reload(): ShadowConfig {
     this.config = null;
     return this.load();
   }

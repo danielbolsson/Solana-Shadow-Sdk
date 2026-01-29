@@ -1,5 +1,5 @@
 /**
- * Ghost Privacy SDK - Main Integration
+ * Shadow Privacy SDK - Main Integration
  * Complete privacy SDK with ZK proofs, Merkle trees, and Solana integration
  */
 
@@ -21,7 +21,7 @@ export interface PrivacyConfig {
   password?: string;
 }
 
-export class GhostPrivacySDK {
+export class ShadowPrivacySDK {
   private config: PrivacyConfig;
   private solanaClient: SolanaPrivacyClient;
   private zkGenerator: ZKProofGenerator;
@@ -580,7 +580,7 @@ export class GhostPrivacySDK {
 export async function demoPrivacySDK() {
 
   // Initialize SDK
-  const sdk = new GhostPrivacySDK({
+  const sdk = new ShadowPrivacySDK({
     network: 'devnet',
     dataDir: './data',
   });

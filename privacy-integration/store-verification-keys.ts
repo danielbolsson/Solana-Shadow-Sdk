@@ -133,7 +133,7 @@ async function storeVerificationKey(
  * Main function
  */
 async function main() {
-  console.log('🔑 Ghost Privacy - Store Verification Keys On-Chain\n');
+  console.log('🔑 Shadow Privacy - Store Verification Keys On-Chain\n');
 
   // Load configuration
   const poolAddress = new PublicKey('5PYt6P2r3hiRU661Kq4EAG5kSnmYVtKto7MtE4YhJVAN'); // Update with your pool

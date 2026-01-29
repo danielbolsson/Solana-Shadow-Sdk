@@ -1,6 +1,6 @@
 import { PublicKey, Connection } from '@solana/web3.js';
 
-export interface GhostClientConfig {
+export interface ShadowClientConfig {
   connection: Connection;
   wallet: any; // Wallet adapter
   programId: PublicKey;

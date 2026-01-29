@@ -138,7 +138,7 @@ cipher /w:pot20_000X.ptau
 
 **Write attestation:**
 ```
-I, [Your Name], participated in the Ghost Privacy Trusted Setup.
+I, [Your Name], participated in the Shadow Privacy Trusted Setup.
 
 Contribution: Phase 1 #X
 Date: 2024-XX-XX
@@ -264,7 +264,7 @@ solana account <VK_PDA_ADDRESS>
 
 **Create ceremony transcript:**
 ```markdown
-# Ghost Privacy Trusted Setup - Final Report
+# Shadow Privacy Trusted Setup - Final Report
 
 ## Timeline
 - Start: 2024-XX-XX
@@ -432,7 +432,7 @@ sha256sum pot20_000X.ptau
 ## Questions?
 
 - Review: `TRUSTED_SETUP.md` for detailed theory
-- Issues: https://github.com/Ghost-Sdk/Ghost-Sdk/issues
+- Issues: https://github.com/Shadow-Sdk/Shadow-Sdk/issues
 - Community: [Your Discord/Telegram]
 
 ## Summary

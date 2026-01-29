@@ -1,7 +1,7 @@
 {
   "name": "ghost-sdk",
   "version": "0.1.0",
-  "description": "Ultimate privacy SDK for Solana - combining Ghost ZK proofs, Monero ring signatures, and Zcash shielded assets",
+  "description": "Ultimate privacy SDK for Solana - combining Shadow ZK proofs, Monero ring signatures, and Zcash shielded assets",
   "private": true,
   "workspaces": [
     "packages/*"

@@ -1,5 +1,5 @@
 /**
- * Ghost Privacy Relayer Service
+ * Shadow Privacy Relayer Service
  * Provides anonymity by submitting transactions on behalf of users
  *
  * This hides the sender's wallet address from on-chain visibility

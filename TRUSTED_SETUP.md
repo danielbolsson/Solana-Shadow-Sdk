@@ -221,7 +221,7 @@ ipfs add pot20_final.ptau
 #### 4.2 Participant Attestations
 Each participant should publish:
 ```
-I, [Name], participated in the Ghost Privacy Trusted Setup Ceremony.
+I, [Name], participated in the Shadow Privacy Trusted Setup Ceremony.
 - Contribution: Phase 1 #5, Phase 2 Transfer #3
 - Randomness source: /dev/urandom + physical dice rolls
 - Entropy hash: sha256(...)
@@ -231,7 +231,7 @@ I, [Name], participated in the Ghost Privacy Trusted Setup Ceremony.
 
 #### 4.3 Coordinator Final Report
 ```markdown
-# Ghost Privacy Trusted Setup - Final Report
+# Shadow Privacy Trusted Setup - Final Report
 
 ## Ceremony Details
 - Date: 2024-XX-XX to 2024-XX-XX
@@ -374,6 +374,6 @@ npx ts-node store-verification-keys.ts
 
 ## Conclusion
 
-A properly executed MPC ceremony is the foundation of trust for the Ghost Privacy protocol. With diverse, independent participants and proper randomness, the protocol achieves cryptographic security without trusting any single party.
+A properly executed MPC ceremony is the foundation of trust for the Shadow Privacy protocol. With diverse, independent participants and proper randomness, the protocol achieves cryptographic security without trusting any single party.
 
 **Remember: Only ONE honest participant is needed for security.**

@@ -1,7 +1,7 @@
 import { PublicKey } from '@solana/web3.js';
 
 // Program IDs
-export const GHOST_PROGRAM_ID = new PublicKey('GhostPrivacy11111111111111111111111111111111');
+export const SHADOW_PROGRAM_ID = new PublicKey('x6ofF4ZJFtXd7BTGV8UB6TBYkE2Vwx7WMmuQCvJKLUV');
 
 // Tree parameters
 export const MERKLE_TREE_DEPTH = 20;

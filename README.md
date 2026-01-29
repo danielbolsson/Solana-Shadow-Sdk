@@ -12,7 +12,7 @@
        ░  ░  ░  ░    ░ ░        ░
 ```
 
-# Ghost Privacy Protocol
+# Shadow Privacy Protocol
 
 ** zero-knowledge privacy protocol for Solana**
 
@@ -56,7 +56,7 @@ This is an early-stage privacy protocol implementation. Core cryptographic compo
 - **solana-client.ts** - Solana transaction builder
 
 ### ✅ Core Package (`packages/core/`)
-- GhostClient with Poseidon cryptography
+- ShadowClient with Poseidon cryptography
 - Commitment/nullifier generation
 - ZK proof integration
 
@@ -143,10 +143,10 @@ Real-time metrics, relayer health, circuit performance, and system monitoring.
 
 **Development (devnet):**
 ```typescript
-import { GhostPrivacySDK } from './privacy-integration/privacy-sdk';
+import { ShadowPrivacySDK } from './privacy-integration/privacy-sdk';
 
 // Configuration loaded from config/devnet.json or environment variables
-const sdk = new GhostPrivacySDK();
+const sdk = new ShadowPrivacySDK();
 await sdk.initialize();
 
 // Deposit
@@ -163,7 +163,7 @@ process.env.GHOST_ENV = 'mainnet';
 process.env.GHOST_STORAGE_PASSWORD = 'strong-password';
 
 // Configuration loaded from config/mainnet.json or environment variables
-const sdk = new GhostPrivacySDK({
+const sdk = new ShadowPrivacySDK({
   password: process.env.GHOST_STORAGE_PASSWORD // Enables encrypted storage
 });
 await sdk.initialize();

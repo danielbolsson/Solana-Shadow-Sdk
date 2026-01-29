@@ -1,7 +1,7 @@
 {
   "name": "ghost-privacy-ceremony-coordinator",
   "version": "1.0.0",
-  "description": "Real multi-party trusted setup ceremony coordinator for Ghost Privacy",
+  "description": "Real multi-party trusted setup ceremony coordinator for Shadow Privacy",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -14,7 +14,7 @@
     "zk-snark",
     "ceremony"
   ],
-  "author": "Ghost Privacy",
+  "author": "Shadow Privacy",
   "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",

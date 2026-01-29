@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Ghost Privacy - Trusted Setup Ceremony Runner
+# Shadow Privacy - Trusted Setup Ceremony Runner
 # This script guides you through executing the MPC ceremony
 
 set -e
@@ -9,7 +9,7 @@ CIRCUITS_DIR="../circuits"
 BUILD_DIR="../circuits/build"
 CEREMONY_DIR="./ceremony"
 
-echo "🔐 Ghost Privacy - Trusted Setup Ceremony"
+echo "🔐 Shadow Privacy - Trusted Setup Ceremony"
 echo "=========================================="
 echo ""
 

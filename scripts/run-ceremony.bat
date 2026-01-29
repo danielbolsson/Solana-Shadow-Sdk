@@ -1,10 +1,10 @@
 @echo off
-REM Ghost Privacy - Trusted Setup Ceremony Runner (Windows)
+REM Shadow Privacy - Trusted Setup Ceremony Runner (Windows)
 
 setlocal EnableDelayedExpansion
 
 echo ============================================
-echo Ghost Privacy - Trusted Setup Ceremony
+echo Shadow Privacy - Trusted Setup Ceremony
 echo ============================================
 echo.
 

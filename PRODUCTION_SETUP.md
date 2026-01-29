@@ -1,6 +1,6 @@
 # Production Setup Guide
 
-Complete guide for deploying Ghost Privacy to Solana mainnet.
+Complete guide for deploying Shadow Privacy to Solana mainnet.
 
 ## Prerequisites
 
@@ -150,10 +150,10 @@ This runs all checks and deploys if validation passes.
 ### Initialize SDK
 
 ```typescript
-import { GhostPrivacySDK } from './privacy-integration/privacy-sdk';
+import { ShadowPrivacySDK } from './privacy-integration/privacy-sdk';
 
 // Configuration loaded automatically from environment or config file
-const sdk = new GhostPrivacySDK({
+const sdk = new ShadowPrivacySDK({
   password: process.env.GHOST_STORAGE_PASSWORD // For encrypted storage
 });
 
@@ -166,12 +166,12 @@ Notes are encrypted with AES-256-GCM when password is provided:
 
 ```typescript
 // Encrypted storage (production)
-const sdk = new GhostPrivacySDK({
+const sdk = new ShadowPrivacySDK({
   password: 'strong-password'
 });
 
 // Plaintext storage (development only)
-const sdk = new GhostPrivacySDK();
+const sdk = new ShadowPrivacySDK();
 ```
 
 **NEVER use plaintext storage in production.**

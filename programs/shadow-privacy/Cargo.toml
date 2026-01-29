@@ -1,12 +1,12 @@
 [package]
-name = "ghost-privacy"
+name = "shadow-privacy"
 version = "0.1.0"
-description = "Ghost Privacy Protocol - Solana program for private transactions"
+description = "Shadow Privacy Protocol - Solana program for private transactions"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "ghost_privacy"
+name = "shadow_privacy"
 
 [features]
 no-entrypoint = []
@@ -14,7 +14,8 @@ test-bpf = []
 
 [dependencies]
 solana-program = "~1.17.0"
-spl-token = { version = "4.0", features = ["no-entrypoint"] }
+spl-token = { version = "3.5", features = ["no-entrypoint"] }
+spl-token-2022 = { version = "=0.6.1", features = ["no-entrypoint"] }
 borsh = "0.10.3"
 borsh-derive = "0.10.3"
 thiserror = "1.0"
@@ -23,10 +24,17 @@ num-derive = "0.4"
 num-traits = "0.2"
 
 # Crypto dependencies
-ark-bn254 = { version = "0.4.0", default-features = false }
+blake3 = { version = "=1.5.0" }
+base64ct = { version = "=1.6.0" }
+ark-bn254 = { version = "0.4.0", default-features = false, features = ["curve"] }
 ark-groth16 = { version = "0.4.0", default-features = false }
 ark-serialize = { version = "0.4.0", default-features = false }
 ark-ff = { version = "0.4.0", default-features = false }
+proc-macro-crate = { version = "=2.0.0" }
+time = { version = "=0.3.34" }
+indexmap = { version = "=2.2.6" }
+hashbrown = { version = "=0.14.3" }
+num_enum = { version = "=0.7.2" }
 
 [dev-dependencies]
 solana-program-test = "~1.17.0"

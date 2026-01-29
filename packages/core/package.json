@@ -1,7 +1,7 @@
 {
   "name": "@ghost-sdk/core",
   "version": "0.1.0",
-  "description": "Core Ghost SDK for private transactions on Solana",
+  "description": "Core Shadow SDK for private transactions on Solana",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -19,7 +19,7 @@
     "anonymous",
     "blockchain"
   ],
-  "author": "Ghost SDK Team",
+  "author": "Shadow SDK Team",
   "license": "MIT",
   "dependencies": {
     "@solana/web3.js": "^1.87.6",

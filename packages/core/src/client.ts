@@ -1,3 +1,4 @@
+/// <reference path="./declarations.d.ts" />
 import {
   Connection,
   PublicKey,
@@ -11,7 +12,7 @@ import { sha256 } from '@noble/hashes/sha256';
 import { randomBytes } from '@noble/hashes/utils';
 import * as snarkjs from 'snarkjs';
 import {
-  GhostClientConfig,
+  ShadowClientConfig,
   Commitment,
   Nullifier,
   ZKProof,
@@ -19,9 +20,9 @@ import {
   DepositParams,
   WithdrawParams,
 } from './types';
-import { GHOST_PROGRAM_ID, MERKLE_TREE_DEPTH, CIRCUITS } from './constants';
+import { SHADOW_PROGRAM_ID, MERKLE_TREE_DEPTH, CIRCUITS } from './constants';
 
-export class GhostClient {
+export class ShadowClient {
   private connection: Connection;
   private wallet: any;
   private programId: PublicKey;
@@ -31,11 +32,12 @@ export class GhostClient {
   private publicKey: Uint8Array;
   private commitments: Map<string, Commitment>;
   private nullifiers: Set<string>;
+  public currentPoolAddress: PublicKey | null = null;
 
-  constructor(config: GhostClientConfig) {
+  constructor(config: ShadowClientConfig) {
     this.connection = config.connection;
     this.wallet = config.wallet;
-    this.programId = config.programId || GHOST_PROGRAM_ID;
+    this.programId = config.programId || SHADOW_PROGRAM_ID;
     this.circuitsPath = config.circuitsPath || './circuits/build';
     this.commitments = new Map();
     this.nullifiers = new Set();
@@ -47,7 +49,7 @@ export class GhostClient {
    * Initialize the client
    */
   async initialize(): Promise<void> {
-    console.log('🔧 Initializing Ghost SDK...');
+    console.log('🔧 Initializing Shadow SDK...');
 
     // Initialize Poseidon hash function
     this.poseidon = await buildPoseidon();
@@ -56,15 +58,15 @@ export class GhostClient {
     const publicKeyHash = this.poseidon([BigInt('0x' + Buffer.from(this.privateKey).toString('hex'))]);
     this.publicKey = this.poseidon.F.toObject(publicKeyHash);
 
-    console.log('✅ Ghost SDK initialized');
-    console.log('   Public key:', Buffer.from(this.publicKey).toString('hex').slice(0, 16) + '...');
+    console.log('✅ Shadow SDK initialized');
+    console.log('   Public key:', Buffer.from((this.publicKey as any).toString(16).padStart(64, '0'), 'hex').toString('hex').slice(0, 16) + '...');
   }
 
   /**
-   * Get Ghost identifier (your privacy identity)
+   * Get Shadow identifier (your privacy identity)
    */
-  getGhostIdentifier(): string {
-    return Buffer.from(this.publicKey).toString('hex');
+  getShadowIdentifier(): string {
+    return Buffer.from((this.publicKey as any).toString(16).padStart(64, '0'), 'hex').toString('hex');
   }
 
   /**
@@ -88,7 +90,7 @@ export class GhostClient {
     const commitmentBytes = this.poseidon.F.toObject(commitment);
 
     return {
-      value: new Uint8Array(commitmentBytes),
+      value: Buffer.from((commitmentBytes as any).toString(16).padStart(64, '0'), 'hex'),
       nonce,
       amount: params.amount,
     };
@@ -107,7 +109,7 @@ export class GhostClient {
     const nullifierBytes = this.poseidon.F.toObject(nullifier);
 
     return {
-      value: new Uint8Array(nullifierBytes),
+      value: Buffer.from((nullifierBytes as any).toString(16).padStart(64, '0'), 'hex'),
       commitment: commitment.value,
     };
   }
@@ -123,19 +125,52 @@ export class GhostClient {
   }): Promise<ZKProof> {
     console.log('🔐 Generating ZK proof...');
 
+    // Generate random mock oldNonce for simulation
+    const oldNonceBytes = randomBytes(32);
+    const oldNonce = BigInt('0x' + Buffer.from(oldNonceBytes).toString('hex'));
+
+    // Calculate Mock Root
+    const publicKeyHash = this.poseidon([BigInt('0x' + Buffer.from(this.privateKey).toString('hex'))]);
+    const oldCommitmentFn = this.poseidon([
+      this.poseidon.F.toObject(publicKeyHash),
+      params.amount,
+      oldNonce
+    ]);
+    let mockRoot = this.poseidon.F.toObject(oldCommitmentFn);
+    for (let i = 0; i < MERKLE_TREE_DEPTH; i++) {
+      mockRoot = this.poseidon.F.toObject(this.poseidon([mockRoot, 0n]));
+    }
+
+    // Calculate Mock Nullifier
+    const mockNullifier = this.poseidon([
+      this.poseidon.F.toObject(oldCommitmentFn),
+      BigInt('0x' + Buffer.from(this.privateKey).toString('hex'))
+    ]);
+
+    // Generate random nonce for new commitment
+    const nonceBytes = randomBytes(32);
+    const nonce = BigInt('0x' + Buffer.from(nonceBytes).toString('hex'));
+
+    const newCommitmentFn = this.poseidon([
+      BigInt('0x' + new PublicKey(params.recipient).toBuffer().toString('hex')),
+      params.amount,
+      nonce
+    ]);
+    const mockNewCommitment = this.poseidon.F.toObject(newCommitmentFn);
+
     // Circuit inputs
     const input = {
       // Public inputs
-      root: '0', // Merkle root (would be actual root in production)
-      nullifier: params.nullifier,
-      newCommitment: params.commitment,
+      root: '0x' + mockRoot.toString(16),
+      nullifier: '0x' + this.poseidon.F.toObject(mockNullifier).toString(16),
+      newCommitment: '0x' + mockNewCommitment.toString(16),
 
       // Private inputs
       amount: params.amount.toString(),
       privateKey: '0x' + Buffer.from(this.privateKey).toString('hex'),
-      recipientPublicKey: params.recipient,
-      nonce: '0x' + Buffer.from(randomBytes(32)).toString('hex'),
-      oldNonce: '0x' + Buffer.from(randomBytes(32)).toString('hex'),
+      recipientPublicKey: '0x' + new PublicKey(params.recipient).toBuffer().toString('hex'),
+      nonce: '0x' + Buffer.from(nonceBytes).toString('hex'),
+      oldNonce: '0x' + Buffer.from(oldNonceBytes).toString('hex'),
 
       // Merkle proof (simplified - would be actual path in production)
       pathElements: Array(MERKLE_TREE_DEPTH).fill('0'),
@@ -176,18 +211,17 @@ export class GhostClient {
     // Generate commitment
     const commitment = await this.generateCommitment({
       amount: params.amount,
-      recipient: this.getGhostIdentifier(),
+      recipient: this.getShadowIdentifier(),
     });
 
-    // Store commitment locally
     const commitmentKey = Buffer.from(commitment.value).toString('hex');
     this.commitments.set(commitmentKey, commitment);
 
-    // Get pool and vault addresses
-    const [poolAddress] = PublicKey.findProgramAddressSync(
+    // Use currentPoolAddress if set, otherwise fallback to PDA derivation
+    const poolAddress = this.currentPoolAddress || PublicKey.findProgramAddressSync(
       [Buffer.from('pool'), Buffer.from(params.amount.toString())],
       this.programId
-    );
+    )[0];
 
     const [vaultAddress] = PublicKey.findProgramAddressSync(
       [Buffer.from('vault'), poolAddress.toBuffer()],
@@ -211,10 +245,63 @@ export class GhostClient {
     const signature = await this.sendAndConfirm(transaction);
 
     console.log('✅ Deposit successful!');
-    console.log('   Signature:', signature);
-    console.log('   Commitment:', commitmentKey.slice(0, 16) + '...');
-
     return signature;
+  }
+
+  /**
+   * Initialize pool on-chain
+   */
+  async initializePool(poolAccount: Keypair, denomination: bigint): Promise<string> {
+    console.log('🏗️  Initializing privacy pool on-chain...');
+    this.currentPoolAddress = poolAccount.publicKey;
+
+    const [vaultAddress] = PublicKey.findProgramAddressSync(
+      [Buffer.from('vault'), poolAccount.publicKey.toBuffer()],
+      this.programId
+    );
+
+    const space = 8192; // PoolState size + buffer
+    const rent = await this.connection.getMinimumBalanceForRentExemption(space);
+
+    const transaction = new Transaction();
+
+    // 1. Create pool account
+    transaction.add(
+      SystemProgram.createAccount({
+        fromPubkey: this.wallet.publicKey,
+        newAccountPubkey: poolAccount.publicKey,
+        lamports: rent,
+        space,
+        programId: this.programId,
+      })
+    );
+
+    // 2. Initialize pool
+    transaction.add(
+      new TransactionInstruction({
+        keys: [
+          { pubkey: poolAccount.publicKey, isSigner: true, isWritable: true },
+          { pubkey: this.wallet.publicKey, isSigner: true, isWritable: true },
+          { pubkey: vaultAddress, isSigner: false, isWritable: true },
+          { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+        ],
+        programId: this.programId,
+        data: this.encodeInitializePoolInstruction(16, denomination),
+      })
+    );
+
+    const signature = await this.sendAndConfirm(transaction, [poolAccount]);
+
+    console.log('✅ Pool initialized');
+    return signature;
+  }
+
+  private encodeInitializePoolInstruction(depth: number, denomination: bigint): Buffer {
+    const buffer = Buffer.alloc(1 + 1 + 8);
+    buffer.writeUInt8(0, 0); // InitializePool discriminator
+    buffer.writeUInt8(depth, 1);
+    buffer.writeBigUInt64LE(denomination, 2);
+    return buffer;
   }
 
   /**
@@ -250,14 +337,19 @@ export class GhostClient {
       nullifier: nullifierKey,
     });
 
-    // Get pool and vault addresses
-    const [poolAddress] = PublicKey.findProgramAddressSync(
+    // Use currentPoolAddress if set
+    const poolAddress = this.currentPoolAddress || PublicKey.findProgramAddressSync(
       [Buffer.from('pool'), Buffer.from(params.amount.toString())],
       this.programId
-    );
+    )[0];
 
     const [vaultAddress] = PublicKey.findProgramAddressSync(
       [Buffer.from('vault'), poolAddress.toBuffer()],
+      this.programId
+    );
+
+    const [vkAddress] = PublicKey.findProgramAddressSync(
+      [Buffer.from('vk_transfer'), poolAddress.toBuffer()],
       this.programId
     );
 
@@ -269,6 +361,7 @@ export class GhostClient {
         { pubkey: poolAddress, isSigner: false, isWritable: true },
         { pubkey: vaultAddress, isSigner: false, isWritable: true },
         { pubkey: recipientPubkey, isSigner: false, isWritable: true },
+        { pubkey: vkAddress, isSigner: false, isWritable: false }, // VK Account
         { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
       ],
       programId: this.programId,
@@ -341,7 +434,7 @@ export class GhostClient {
     // Generate balance commitment
     const balanceCommitment = await this.generateCommitment({
       amount: actualBalance,
-      recipient: this.getGhostIdentifier(),
+      recipient: this.getShadowIdentifier(),
     });
 
     const input = {
@@ -386,10 +479,10 @@ export class GhostClient {
   }
 
   private encodeDepositInstruction(commitment: Uint8Array, amount: bigint): Buffer {
-    // Encode deposit instruction for Solana program
-    // Format: [instruction_id (1 byte), commitment (32 bytes), amount (8 bytes)]
+    // Rust: Deposit { commitment: [u8; 32], amount: u64 }
+    // Discriminant: 1
     const buffer = Buffer.alloc(1 + 32 + 8);
-    buffer.writeUInt8(1, 0); // Deposit instruction ID
+    buffer.writeUInt8(1, 0);
     buffer.set(commitment, 1);
     buffer.writeBigUInt64LE(amount, 33);
     return buffer;
@@ -402,16 +495,25 @@ export class GhostClient {
     amount: bigint,
     recipient: PublicKey
   ): Buffer {
-    // Encode withdraw instruction
-    const buffer = Buffer.alloc(1 + 4 + proof.length + 32 + 32 + 8 + 32);
+    // Rust layout:
+    // Withdraw {
+    //   proof: Vec<u8>,
+    //   root: [u8; 32],
+    //   nullifier: [u8; 32],
+    //   new_commitment: Option<[u8; 32]>,
+    //   recipient: Pubkey,
+    //   amount: u64,
+    // }
+    // Discriminant: 2
+
+    const buffer = Buffer.alloc(1 + 4 + proof.length + 32 + 32 + 1 + 32 + 8);
     let offset = 0;
 
-    buffer.writeUInt8(2, offset); // Withdraw instruction ID
+    buffer.writeUInt8(2, offset); // Discriminant
     offset += 1;
 
     buffer.writeUInt32LE(proof.length, offset);
     offset += 4;
-
     buffer.set(proof, offset);
     offset += proof.length;
 
@@ -421,18 +523,26 @@ export class GhostClient {
     buffer.set(nullifier, offset);
     offset += 32;
 
-    buffer.writeBigUInt64LE(amount, offset);
-    offset += 8;
+    // Option<[u8; 32]> for new_commitment (None = 0)
+    buffer.writeUInt8(0, offset);
+    offset += 1;
 
-    buffer.set(recipient.toBytes(), offset);
+    buffer.set(recipient.toBuffer(), offset);
+    offset += 32;
+
+    buffer.writeBigUInt64LE(amount, offset);
 
     return buffer;
   }
 
-  private async sendAndConfirm(transaction: Transaction): Promise<string> {
+  private async sendAndConfirm(transaction: Transaction, extraSigners: Keypair[] = []): Promise<string> {
     const { blockhash } = await this.connection.getLatestBlockhash();
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = this.wallet.publicKey;
+
+    if (extraSigners.length > 0) {
+      transaction.partialSign(...extraSigners);
+    }
 
     const signed = await this.wallet.signTransaction(transaction);
     const signature = await this.connection.sendRawTransaction(signed.serialize());
@@ -442,4 +552,4 @@ export class GhostClient {
   }
 }
 
-export type { GhostClientConfig };
+export type { ShadowClientConfig };

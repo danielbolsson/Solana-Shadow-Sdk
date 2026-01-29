@@ -1,23 +1,23 @@
-Ghost Privacy: Production-Ready zkSNARK Privacy for Solana 👻
+Shadow Privacy: Production-Ready zkSNARK Privacy for Solana 👻
 
-Privacy is a fundamental right, and Ghost Protocol is bringing battle-tested zero-knowledge technology to Solana developers everywhere.
+Privacy is a fundamental right, and Shadow Protocol is bringing battle-tested zero-knowledge technology to Solana developers everywhere.
 
-Ghost Privacy is a complete zkSNARK privacy protocol for Solana, featuring Groth16 proofs, Poseidon hashing, and MLSAG ring signatures. Built with production in mind—from encrypted storage to multi-party trusted setup ceremonies—Ghost gives developers everything needed to build confidential Solana applications.
+Shadow Privacy is a complete zkSNARK privacy protocol for Solana, featuring Groth16 proofs, Poseidon hashing, and MLSAG ring signatures. Built with production in mind—from encrypted storage to multi-party trusted setup ceremonies—Shadow gives developers everything needed to build confidential Solana applications.
 
-From Commitments to Anonymous Transactions: The Ghost Advantage
+From Commitments to Anonymous Transactions: The Shadow Advantage
 
-Ghost Protocol combines proven cryptographic primitives into a complete privacy stack:
+Shadow Protocol combines proven cryptographic primitives into a complete privacy stack:
 
 • Groth16 ZK-SNARKs: Industry-standard succinct proofs with ark-groth16 verification on-chain
 • Poseidon Hashing: ZK-friendly hash function for efficient Merkle trees and commitments
 • MLSAG Ring Signatures: Monero-style anonymity sets for transaction unlinkability
 • PDA Architecture: Scalable nullifier tracking with O(1) lookup, unlimited throughput
 
-This integrated approach means developers get privacy out-of-the-box. No need to wire together cryptographic primitives—Ghost handles the complexity so you can focus on your application.
+This integrated approach means developers get privacy out-of-the-box. No need to wire together cryptographic primitives—Shadow handles the complexity so you can focus on your application.
 
 The Power of Real Cryptography
 
-One of Ghost's main differentiators is its commitment to production-grade implementations—no mocks, no placeholders:
+One of Shadow's main differentiators is its commitment to production-grade implementations—no mocks, no placeholders:
 
 Real Groth16 Verification:
 
@@ -49,13 +49,13 @@ No SHA256 placeholders pretending to be Poseidon. No simulated proofs. Every cry
 
 Building from Production Requirements
 
-Ghost was designed from day one for real deployments, not just demos:
+Shadow was designed from day one for real deployments, not just demos:
 
 // Environment-based configuration
 process.env.GHOST_ENV = 'mainnet';
 process.env.GHOST_STORAGE_PASSWORD = 'strong-password';
 
-const sdk = new GhostPrivacySDK({
+const sdk = new ShadowPrivacySDK({
   password: process.env.GHOST_STORAGE_PASSWORD
 });
 
@@ -78,7 +78,7 @@ Each component addresses real production concerns: encrypted storage with passwo
 
 Production Infrastructure That Actually Works
 
-Ghost includes enterprise-grade infrastructure that removes "educational" characteristics:
+Shadow includes enterprise-grade infrastructure that removes "educational" characteristics:
 
 Encrypted Storage System:
 • AES-256-GCM authenticated encryption for all sensitive data
@@ -109,11 +109,11 @@ npm start
 # Participants contribute independently
 npm run participant
 
-No simulated participants. No automated fake contributions. Ghost's ceremony infrastructure is built for actual independent participants contributing real randomness—requiring only ONE honest participant for security.
+No simulated participants. No automated fake contributions. Shadow's ceremony infrastructure is built for actual independent participants contributing real randomness—requiring only ONE honest participant for security.
 
 Circuits: Real Implementations, Real Security
 
-Ghost circuits implement proven privacy patterns with actual cryptographic soundness:
+Shadow circuits implement proven privacy patterns with actual cryptographic soundness:
 
 Private Transfer Circuit (transfer.circom):
 • Proves valid spend of commitment without revealing amount
@@ -136,7 +136,7 @@ All circuits use Poseidon instead of SHA256 for ZK efficiency. All proofs verify
 
 Solana Integration: Native and Efficient
 
-Ghost's on-chain program leverages Solana's architecture for maximum efficiency:
+Shadow's on-chain program leverages Solana's architecture for maximum efficiency:
 
 // PDA-based nullifier storage (O(1), unlimited scale)
 #[account]
@@ -160,7 +160,7 @@ This architecture eliminates on-chain storage limits. Every nullifier gets its o
 
 Relayer Network: Privacy Without Compromise
 
-Ghost includes a production relayer system with reputation scoring:
+Shadow includes a production relayer system with reputation scoring:
 
 // Anonymous withdrawal through relayer
 await sdk.withdrawViaRelayer(
@@ -174,11 +174,11 @@ Relayers submit transactions on behalf of users, completely hiding the connectio
 
 SDK: Complete Privacy Abstraction
 
-The Ghost SDK handles all complexity, giving developers a clean interface:
+The Shadow SDK handles all complexity, giving developers a clean interface:
 
-import { GhostPrivacySDK } from '@ghost/sdk';
+import { ShadowPrivacySDK } from '@ghost/sdk';
 
-const sdk = new GhostPrivacySDK();
+const sdk = new ShadowPrivacySDK();
 await sdk.initialize();
 
 // Deposit SOL into shielded pool
@@ -211,7 +211,7 @@ All ZK proof generation, Merkle tree updates, nullifier tracking, and on-chain i
 
 Deployment Safety: Automated Validation
 
-Before any mainnet deployment, Ghost's readiness checker validates everything:
+Before any mainnet deployment, Shadow's readiness checker validates everything:
 
 GHOST_ENV=mainnet ts-node scripts/production-readiness-check.ts
 
@@ -230,9 +230,9 @@ This automation prevents deployment mistakes. No ceremony? Blocked. Hardcoded de
 
 Start Building Private Solana Apps Today
 
-Ghost Privacy is open source and ready for developers:
+Shadow Privacy is open source and ready for developers:
 
-Repository: https://github.com/Ghost-Sdk/Ghost-Sdk
+Repository: https://github.com/Shadow-Sdk/Shadow-Sdk
 Documentation: Complete guides in PRODUCTION_SETUP.md and TRUSTED_SETUP.md
 Ceremony Tools: Full coordinator and participant CLI included
 License: MIT

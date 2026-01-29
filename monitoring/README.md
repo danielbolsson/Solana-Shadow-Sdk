@@ -1,6 +1,6 @@
-# Ghost Privacy Monitoring Dashboard
+# Shadow Privacy Monitoring Dashboard
 
-Real-time operational monitoring and metrics visualization for Ghost Privacy Protocol.
+Real-time operational monitoring and metrics visualization for Shadow Privacy Protocol.
 
 ## Features
 
@@ -49,7 +49,7 @@ Set environment variables:
 # Dashboard port (default: 5000)
 export MONITOR_PORT=5000
 
-# Ghost configuration (automatically loaded)
+# Shadow configuration (automatically loaded)
 export GHOST_ENV=mainnet
 export GHOST_RPC_URL=https://api.mainnet-beta.solana.com
 export GHOST_PROGRAM_ID=<your_program_id>
@@ -69,7 +69,7 @@ npm start
 
 Dashboard available at: `http://localhost:5000`
 
-### Integration with Ghost SDK
+### Integration with Shadow SDK
 
 Record metrics from your application:
 
@@ -319,7 +319,7 @@ import axios from 'axios';
 async function sendAlert(message: string) {
   if (process.env.SLACK_WEBHOOK_URL) {
     await axios.post(process.env.SLACK_WEBHOOK_URL, {
-      text: `🚨 Ghost Privacy Alert: ${message}`
+      text: `🚨 Shadow Privacy Alert: ${message}`
     });
   }
 }
@@ -363,4 +363,4 @@ npm run lint
 
 ## License
 
-MIT License - Part of Ghost Privacy Protocol
+MIT License - Part of Shadow Privacy Protocol

@@ -1,7 +1,7 @@
 {
   "name": "@ghost/monitoring",
   "version": "1.0.0",
-  "description": "Real-time monitoring dashboard for Ghost Privacy Protocol",
+  "description": "Real-time monitoring dashboard for Shadow Privacy Protocol",
   "main": "dashboard-server.ts",
   "scripts": {
     "start": "ts-node dashboard-server.ts",
@@ -16,7 +16,7 @@
     "metrics",
     "dashboard"
   ],
-  "author": "Ghost Privacy",
+  "author": "Shadow Privacy",
   "license": "MIT",
   "dependencies": {
     "@solana/web3.js": "^1.87.0",

@@ -1,6 +1,6 @@
 # Production Infrastructure Summary
 
-This document summarizes the production-grade infrastructure implemented to ensure the Ghost Privacy protocol is deployment-ready.
+This document summarizes the production-grade infrastructure implemented to ensure the Shadow Privacy protocol is deployment-ready.
 
 ## Overview
 
@@ -110,12 +110,12 @@ Comprehensive pre-deployment validation covering:
 ```typescript
 // Production
 process.env.GHOST_ENV = 'mainnet';
-const sdk = new GhostPrivacySDK({
+const sdk = new ShadowPrivacySDK({
   password: process.env.GHOST_STORAGE_PASSWORD
 });
 
 // Development
-const sdk = new GhostPrivacySDK(); // Uses devnet config
+const sdk = new ShadowPrivacySDK(); // Uses devnet config
 ```
 
 **File:** `privacy-integration/note-manager.ts`
@@ -243,7 +243,7 @@ production.config.ts → Load & Validate
         ├→ devnet.json (if exists)
         └→ Defaults
         ↓
-GhostPrivacySDK (uses config)
+ShadowPrivacySDK (uses config)
         ↓
 NoteManager (encrypted if password set)
         ↓
@@ -343,7 +343,7 @@ For production deployment assistance:
 
 ## Conclusion
 
-This infrastructure transforms the Ghost Privacy protocol from an educational implementation into a production-ready system with:
+This infrastructure transforms the Shadow Privacy protocol from an educational implementation into a production-ready system with:
 - Enterprise-grade security (encrypted storage)
 - Configuration flexibility (environment-based)
 - Deployment safety (validation checks)

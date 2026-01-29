@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Ghost Privacy - Ceremony Participant CLI
+ * Shadow Privacy - Ceremony Participant CLI
  *
  * Tool for participants to contribute to the trusted setup ceremony
  */
@@ -42,7 +42,7 @@ async function main() {
   console.log('       ░  ░  ░  ░    ░ ░        ░           ');
   console.log('\n');
   console.log('========================================');
-  console.log('Ghost Privacy - Ceremony Participant');
+  console.log('Shadow Privacy - Ceremony Participant');
   console.log('========================================\n');
 
   // Check if already registered
@@ -285,7 +285,7 @@ async function uploadContribution(config) {
   console.log('\n=== Attestation ===');
   console.log('Please provide a signed attestation of your contribution.\n');
   console.log('Example:');
-  console.log('  I, [Your Name], contributed to the Ghost Privacy ceremony.');
+  console.log('  I, [Your Name], contributed to the Shadow Privacy ceremony.');
   console.log('  Entropy source: /dev/urandom + physical dice rolls');
   console.log('  I destroyed all intermediate files.');
   console.log('  GPG Signature: [signature]\n');

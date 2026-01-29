@@ -1,4 +1,4 @@
-# Ghost Privacy - Real Multi-Party Trusted Setup Ceremony
+# Shadow Privacy - Real Multi-Party Trusted Setup Ceremony
 
 **Production-grade ceremony coordinator for real independent participants.**
 
@@ -199,7 +199,7 @@ Choice: 4 (Upload contribution)
 Provide a signed attestation:
 
 ```
-I, Alice Crypto, participated in Ghost Privacy ceremony Phase 1.
+I, Alice Crypto, participated in Shadow Privacy ceremony Phase 1.
 Date: 2024-12-15
 Entropy: /dev/urandom + 100 dice rolls
 I destroyed all intermediate files.
@@ -380,7 +380,7 @@ snarkjs zkey verify \
 
 ## Support
 
-- Issues: https://github.com/Ghost-Sdk/Ghost-Sdk/issues
+- Issues: https://github.com/Shadow-Sdk/Shadow-Sdk/issues
 - Documentation: `../TRUSTED_SETUP.md`
 - Community: [Your Discord/Telegram]
 

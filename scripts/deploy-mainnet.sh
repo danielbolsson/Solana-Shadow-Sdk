@@ -6,7 +6,7 @@
 set -e
 
 echo "========================================="
-echo "Ghost Privacy - Mainnet Deployment"
+echo "Shadow Privacy - Mainnet Deployment"
 echo "========================================="
 echo ""
 

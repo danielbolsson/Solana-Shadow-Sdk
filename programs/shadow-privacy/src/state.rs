@@ -370,7 +370,7 @@ impl VerificationKeyAccount {
         circuit_type: CircuitType,
         program_id: &Pubkey,
     ) -> (Pubkey, u8) {
-        let circuit_seed = match circuit_type {
+        let circuit_seed: &[u8] = match circuit_type {
             CircuitType::Transfer => b"vk_transfer",
             CircuitType::Balance => b"vk_balance",
             CircuitType::RingSignature => b"vk_ring_sig",

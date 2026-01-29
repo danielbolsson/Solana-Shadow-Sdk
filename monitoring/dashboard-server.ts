@@ -162,7 +162,7 @@ httpServer.listen(PORT, () => {
   console.log('       ░  ░  ░  ░    ░ ░        ░           ');
   console.log('\n');
   console.log('========================================');
-  console.log('Ghost Privacy - Monitoring Dashboard');
+  console.log('Shadow Privacy - Monitoring Dashboard');
   console.log('========================================');
   console.log(`Server running on http://localhost:${PORT}`);
   console.log(`WebSocket available for real-time updates`);

@@ -1,7 +1,7 @@
 {
   "name": "@ghost-sdk/circuits",
   "version": "0.1.0",
-  "description": "ZK circuits for Ghost SDK",
+  "description": "ZK circuits for Shadow SDK",
   "scripts": {
     "build": "./build.sh",
     "test": "mocha test/**/*.test.js",

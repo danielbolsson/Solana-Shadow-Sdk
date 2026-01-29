@@ -1,7 +1,7 @@
 /**
  * Metrics Collector
  *
- * Collects and aggregates operational metrics for Ghost Privacy
+ * Collects and aggregates operational metrics for Shadow Privacy
  */
 
 import { Connection, PublicKey } from '@solana/web3.js';

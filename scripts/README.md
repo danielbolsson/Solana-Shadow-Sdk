@@ -1,4 +1,4 @@
-# Ghost Privacy - Ceremony Scripts
+# Shadow Privacy - Ceremony Scripts
 
 This directory contains scripts and guides for performing the trusted setup ceremony.
 

@@ -1,4 +1,4 @@
-// Ghost Privacy Protocol - Solana Program
+// Shadow Privacy Protocol - Solana Program
 //
 // Provides on-chain verification for:
 // - ZK-SNARK proofs (Groth16)
@@ -29,4 +29,4 @@ pub fn process(
 solana_program::entrypoint!(process);
 
 // Re-export program ID
-solana_program::declare_id!("GhostPrivacy11111111111111111111111111111111");
+solana_program::declare_id!("x6ofF4ZJFtXd7BTGV8UB6TBYkE2Vwx7WMmuQCvJKLUV");

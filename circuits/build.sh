@@ -5,7 +5,7 @@
 
 set -e
 
-echo "🔧 Building Ghost SDK circuits..."
+echo "🔧 Building Shadow SDK circuits..."
 
 # Create build directory
 mkdir -p build
@@ -23,7 +23,7 @@ for CIRCUIT in "${CIRCUITS[@]}"; do
 
     # Compile circuit
     echo "  📝 Compiling circuit..."
-    circom ${CIRCUIT}.circom --r1cs --wasm --sym -o build/
+    circom ${CIRCUIT}.circom -l node_modules --r1cs --wasm --sym -o build/
 
     # Generate witness calculator
     echo "  🔨 Generating witness calculator..."
@@ -45,7 +45,7 @@ for CIRCUIT in "${CIRCUITS[@]}"; do
     # Contribute to ceremony (in production, do proper ceremony)
     echo "  🎲 Contributing to ceremony..."
     snarkjs zkey contribute build/${CIRCUIT}_0000.zkey build/${CIRCUIT}_final.zkey \
-        --name="Ghost SDK" -v -e="$(openssl rand -base64 32)"
+        --name="Shadow SDK" -v -e="$(openssl rand -base64 32)"
 
     # Export verification key
     echo "  📤 Exporting verification key..."

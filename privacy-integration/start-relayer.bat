@@ -3,7 +3,7 @@ cd /d "%~dp0"
 
 echo.
 echo ========================================
-echo   Starting Ghost Privacy Relayer
+echo   Starting Shadow Privacy Relayer
 echo ========================================
 echo.
 

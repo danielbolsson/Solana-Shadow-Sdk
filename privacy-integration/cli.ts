@@ -1,10 +1,10 @@
 /**
- * Ghost Privacy - Clean CLI Interface
+ * Shadow Privacy - Clean CLI Interface
  * Privacy-preserving transactions on Solana
  */
 
 import { Keypair, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { GhostPrivacySDK } from './privacy-sdk';
+import { ShadowPrivacySDK } from './privacy-sdk';
 import * as readline from 'readline';
 import * as fs from 'fs';
 import * as os from 'os';
@@ -40,7 +40,7 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
-let sdk: GhostPrivacySDK;
+let sdk: ShadowPrivacySDK;
 let wallet: Keypair;
 let currentOwner = 'default';
 
@@ -391,7 +391,7 @@ async function main() {
   );
 
   // Initialize SDK
-  sdk = new GhostPrivacySDK({
+  sdk = new ShadowPrivacySDK({
     network: 'devnet',
     dataDir: './data',
   });
