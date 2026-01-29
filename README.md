@@ -20,7 +20,7 @@ This is an early-stage privacy protocol implementation. Core cryptographic compo
 
 ## 🔐 What's Implemented (Production-Ready Core)
 
-### ✅ Solana Program (`programs/ghost-privacy/`)
+### ✅ Solana Program (`programs/shadow-privacy/`)
 - **Real Groth16 verification** using `ark-groth16` library
 - **MLSAG ring signature verification** (Monero-style)
 - PDA-based nullifier storage architecture (O(1) lookup, unlimited scalability)
@@ -138,19 +138,21 @@ await sdk.initialize();
 // Deposit
 const note = await sdk.deposit(payer, 1.0, ownerAddress);
 
-// Withdraw anonymously via relayer
-const signature = await sdk.withdrawViaRelayer(note, recipient, 1.0);
+// Withdraw anonymously via relayer to break metadata links
+const signature = await sdk.withdrawViaRelayer(note, recipient, 1.0, {
+  relayerUrl: 'https://relayer.shadow-protocol.io'
+});
 ```
 
 **Production (mainnet):**
 ```typescript
 // Set environment
-process.env.GHOST_ENV = 'mainnet';
-process.env.GHOST_STORAGE_PASSWORD = 'strong-password';
+process.env.SHADOW_ENV = 'mainnet';
+process.env.SHADOW_STORAGE_PASSWORD = 'strong-password';
 
 // Configuration loaded from config/mainnet.json or environment variables
 const sdk = new ShadowPrivacySDK({
-  password: process.env.GHOST_STORAGE_PASSWORD // Enables encrypted storage
+  password: process.env.SHADOW_STORAGE_PASSWORD // Enables encrypted storage
 });
 await sdk.initialize();
 ```
@@ -166,15 +168,15 @@ See `PRODUCTION_SETUP.md` for complete mainnet deployment instructions.
 | Ring Signatures | ✅ Implemented | MLSAG verification |
 | Nullifier Tracking | ✅ Implemented | PDA-based (scalable) |
 | VK Storage | ✅ Implemented | On-chain PDA accounts |
-| Relayer Network | ✅ Implemented | Decentralized with reputation scoring |
+| Relayer Network | ✅ Implemented | Anonymous transaction relay (breaks signer links) |
 | Merkle Trees | ✅ Implemented | 20-level Poseidon tree |
 | Encrypted Storage | ✅ Implemented | AES-256-GCM |
 | Monitoring Dashboard | ✅ Implemented | Real-time metrics & health |
 
 ## ⚠️ Known Limitations
-
 1. **No audit** - Code has not been professionally audited.
-2. **Testing incomplete** - Needs comprehensive circuit tests and BPF tests.
+2. **Simulated Verification** - In the Alpha demo, on-chain ZK verification is logged as "Skipped" to stay within Solana's default 200k Compute Unit limit. Production deployment requires using the `alt_bn128` precompiles.
+3. **Testing incomplete** - Needs comprehensive circuit tests and BPF tests.
 
 **Note on Trusted Setup:** Multi-party trusted setup ceremony must be completed before mainnet deployment. See `TRUSTED_SETUP.md` and `ceremony-coordinator/README.md` for complete instructions.
 
@@ -197,9 +199,9 @@ See `PRODUCTION_SETUP.md` for complete mainnet deployment instructions.
 - `circuits/ring_signature.circom` - Proves membership in ring without revealing which member
 
 ### Rust Program
-- `programs/ghost-privacy/src/verifier.rs` - Cryptographic verification
-- `programs/ghost-privacy/src/state.rs` - On-chain state management
-- `programs/ghost-privacy/src/processor.rs` - Instruction processing
+- `programs/shadow-privacy/src/verifier.rs` - Cryptographic verification
+- `programs/shadow-privacy/src/state.rs` - On-chain state management
+- `programs/shadow-privacy/src/processor.rs` - Instruction processing
 
 ### Production Deployment
 - `PRODUCTION_SETUP.md` - Complete mainnet deployment guide

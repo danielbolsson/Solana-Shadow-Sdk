@@ -1,21 +1,92 @@
 use crate::error::PrivacyError;
 use solana_program::{msg, program_error::ProgramError};
-use ark_bn254::{Bn254, Fr, G1Affine, G2Affine};
+use ark_bn254::{Bn254, Fr};
 use ark_groth16::{Groth16, Proof, VerifyingKey, prepare_verifying_key};
-use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
-use ark_ff::PrimeField;
+use ark_serialize::CanonicalDeserialize;
+use ark_snark::SNARK;
 use borsh::BorshDeserialize;
 
 /// Verify Groth16 ZK-SNARK proof for transfer using ark-groth16
-pub fn verify_transfer_proof(_proof: &[u8], _public_inputs: &[Vec<u8>], _vk_account_data: &[u8]) -> Result<bool, ProgramError> {
-    msg!("DEBUG: Skipping ZK verification for demo");
-    Ok(true)
+pub fn verify_transfer_proof(proof: &[u8], public_inputs: &[Vec<u8>], vk_account_data: &[u8]) -> Result<bool, ProgramError> {
+    #[cfg(not(feature = "real-zk-verification"))]
+    {
+        msg!("DEBUG: Skipping ZK verification for demo");
+        Ok(true)
+    }
+
+    #[cfg(feature = "real-zk-verification")]
+    {
+        msg!("Verifying Groth16 transfer proof...");
+        
+        // 1. Load and prepare the Verifying Key from PDA (Heap allocated)
+        let vk = load_verification_key_from_account(vk_account_data)?;
+        let pvk = Box::new(prepare_verifying_key(&vk));
+        
+        // 2. Deserialize the proof (Boxed to save stack space)
+        let proof_obj = Box::new(Proof::<Bn254>::deserialize_compressed(proof)
+            .map_err(|e| {
+                msg!("Error deserializing proof: {:?}", e);
+                PrivacyError::InvalidProof
+            })?);
+            
+        // 3. Prepare public inputs (Merkle root, Nullifier, New Commitment)
+        let inputs = deserialize_field_elements(public_inputs)?;
+        
+        // 4. Perform Groth16 verification
+        // Argument order: PVK, Proof, PublicInputs
+        let result = Groth16::<Bn254>::verify_proof(&pvk, &proof_obj, &inputs)
+            .map_err(|e| {
+                msg!("Error during ZK verification: {:?}", e);
+                PrivacyError::InvalidProof
+            })?;
+            
+        if result {
+            msg!("✓ Groth16 transfer proof verified successfully");
+        } else {
+            msg!("✗ Groth16 transfer proof verification failed");
+        }
+        
+        Ok(result)
+    }
 }
 
 /// Verify balance proof using ark-groth16
-pub fn verify_balance_proof(_proof: &[u8], _public_inputs: &[Vec<u8>], _vk_account_data: &[u8]) -> Result<bool, ProgramError> {
-    msg!("DEBUG: Skipping ZK verification for demo");
-    Ok(true)
+pub fn verify_balance_proof(proof: &[u8], public_inputs: &[Vec<u8>], vk_account_data: &[u8]) -> Result<bool, ProgramError> {
+    #[cfg(not(feature = "real-zk-verification"))]
+    {
+        msg!("DEBUG: Skipping ZK verification for demo");
+        Ok(true)
+    }
+
+    #[cfg(feature = "real-zk-verification")]
+    {
+        msg!("Verifying Groth16 balance proof...");
+        
+        let vk = load_verification_key_from_account(vk_account_data)?;
+        let pvk = Box::new(prepare_verifying_key(&vk));
+        
+        let proof_obj = Box::new(Proof::<Bn254>::deserialize_compressed(proof)
+            .map_err(|e| {
+                msg!("Error deserializing proof: {:?}", e);
+                PrivacyError::InvalidProof
+            })?);
+            
+        let inputs = deserialize_field_elements(public_inputs)?;
+        
+        let result = Groth16::<Bn254>::verify_proof(&pvk, &proof_obj, &inputs)
+            .map_err(|e| {
+                msg!("Error during ZK verification: {:?}", e);
+                PrivacyError::InvalidProof
+            })?;
+            
+        if result {
+            msg!("✓ Groth16 balance proof verified successfully");
+        } else {
+            msg!("✗ Groth16 balance proof verification failed");
+        }
+        
+        Ok(result)
+    }
 }
 
 /// Verify Monero-style MLSAG ring signature
@@ -115,7 +186,7 @@ pub fn verify_ring_signature(
 /// - bump: u8
 pub fn load_verification_key_from_account(
     vk_account_data: &[u8],
-) -> Result<VerifyingKey<Bn254>, ProgramError> {
+) -> Result<Box<VerifyingKey<Bn254>>, ProgramError> {
     use crate::state::VerificationKeyAccount;
 
     // Deserialize the VK account
@@ -133,16 +204,16 @@ pub fn load_verification_key_from_account(
         })?;
 
     msg!("✓ Verification key loaded successfully from PDA");
-    Ok(vk)
+    Ok(Box::new(vk))
 }
 
 /// Load transfer verification key (helper function for backward compatibility)
-fn load_transfer_verification_key_from_data(vk_data: &[u8]) -> Result<VerifyingKey<Bn254>, ProgramError> {
+fn load_transfer_verification_key_from_data(vk_data: &[u8]) -> Result<Box<VerifyingKey<Bn254>>, ProgramError> {
     load_verification_key_from_account(vk_data)
 }
 
 /// Load balance verification key (helper function for backward compatibility)
-fn load_balance_verification_key_from_data(vk_data: &[u8]) -> Result<VerifyingKey<Bn254>, ProgramError> {
+fn load_balance_verification_key_from_data(vk_data: &[u8]) -> Result<Box<VerifyingKey<Bn254>>, ProgramError> {
     load_verification_key_from_account(vk_data)
 }
 

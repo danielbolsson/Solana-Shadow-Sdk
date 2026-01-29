@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Under the Hood: Shadow Transfer Flow</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        :root {
+            --bg-dark: #09090b;
+            --card-bg: #18181b;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --accent-emerald: #10b981;
+            --accent-cyan: #06b6d4;
+            --text-main: #fafafa;
+            --text-muted: #a1a1aa;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.6;
+            padding-bottom: 80px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        header {
+            margin-bottom: 60px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            letter-spacing: -0.05em;
+            margin-bottom: 16px;
+            background: linear-gradient(90deg, var(--accent-emerald), var(--accent-cyan));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+        }
+
+        section {
+            margin-bottom: 80px;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        h2::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: var(--accent-emerald);
+            border-radius: 2px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 32px;
+        }
+
+        p {
+            margin-bottom: 1.5rem;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .diagram {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            margin: 32px 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: var(--accent-cyan);
+            color: var(--bg-dark);
+            border-radius: 50%;
+            font-weight: 800;
+            font-size: 0.8rem;
+            margin-right: 12px;
+        }
+
+        ul {
+            list-style: none;
+            margin-bottom: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        li::before {
+            content: '→';
+            color: var(--accent-emerald);
+            margin-right: 12px;
+            font-weight: bold;
+        }
+
+        .formula {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            text-align: center;
+            padding: 20px;
+            background: rgba(16, 185, 129, 0.05);
+            border: 1px dashed var(--accent-emerald);
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .nav-back {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .nav-back:hover {
+            border-color: var(--accent-emerald);
+        }
+    </style>
+</head>
+
+<body>
+    <a href="/" class="nav-back">← Back to Dashboard</a>
+
+    <div class="container">
+        <header>
+            <h1>Transfer Flow Deep Dive</h1>
+            <p class="subtitle">How Alice sends 0.1 SOL to Bob with zero on-chain fingerprints.</p>
+        </header>
+
+        <section id="shielding">
+            <h2>Phase 1: Shielding (The Deposit)</h2>
+            <div class="card">
+                <p>When Alice deposits 0.1 SOL into the Shadow Pool, she isn't just sending money; she is "shielding"
+                    it. The transaction is public, but the funds are now represented by a cryptographic secret.</p>
+
+                <div class="formula">Commitment = PoseidonHash(RecipientAddress, Amount, SecretNonce)</div>
+
+                <ul>
+                    <li><strong>Identity</strong>: Alice uses her Shadow Identity (a Poseidon keypair) to define who can
+                        spend the funds.</li>
+                    <li><strong>Commitment</strong>: A hidden "voucher" is created. Only Alice knows the
+                        <code>SecretNonce</code> that links this voucher to her.
+                    </li>
+                    <li><strong>On-Chain</strong>: The Solana program receives the 0.1 SOL and stores the
+                        <code>Commitment</code> in a Merkle Tree.
+                    </li>
+                </ul>
+
+                <div class="mermaid">
+                    graph LR
+                    A[Alice] -- "0.1 SOL" --> P[Solana Program]
+                    A -- "Commitment" --> P
+                    P -- "Store" --> T[Merkle Tree]
+                    style A fill:#09090b,stroke:#a1a1aa,color:#fff
+                    style P fill:#18181b,stroke:#10b981,color:#fff
+                    style T fill:#18181b,stroke:#06b6d4,color:#fff
+                </div>
+            </div>
+        </section>
+
+        <section id="proof">
+            <h2>Phase 2: Proving Identity (ZK-Proof)</h2>
+            <div class="card">
+                <p>This is the magic part. To send funds to Bob, Alice must prove she "owns" one of the commitments in
+                    the pool without revealing <strong>which one</strong>.</p>
+
+                <ul>
+                    <li><strong>Input</strong>: Alice provides her <code>PrivateKey</code>, <code>SecretNonce</code>,
+                        and a <code>Merkle Path</code> as private inputs.</li>
+                    <li><strong>Proving</strong>: The Circom circuit verifies that <code>H(H(Key), Amount, Nonce)</code>
+                        exists in the tree root.</li>
+                    <li><strong>Zero-Knowledge</strong>: The output is a Groth16 proof (256 bytes) that says "I know a
+                        valid secret for a commitment in this pool" without naming the secret or the commitment index.
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="relayer">
+            <h2>Phase 3: The Relayer (Breaking the Link)</h2>
+            <div class="card">
+                <p>In Phase 2, Alice generated a proof. But if Alice sends that proof to Solana herself, her wallet
+                    address
+                    appears as the <code>Fee Payer</code>. This creates a metadata link. To fix this, we use a
+                    <strong>Relayer</strong>.
+                </p>
+
+                <ul>
+                    <li><strong>Anonymity</strong>: Alice sends her proof and Bob's address to the Relayer via an
+                        encrypted off-chain channel.</li>
+                    <li><strong>Gasless Payout</strong>: The Relayer pays the Solana transaction fees. Alice's address
+                        never touches the blockchain during the payout.</li>
+                    <li><strong>Privacy</strong>: On-chain, observers only see the <code>Relayer</code> interacting with
+                        the <code>Shadow Pool</code>. Alice is invisible.</li>
+                </ul>
+
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant Alice
+                    participant SDK as Shadow SDK
+                    participant Relayer
+                    participant Program as Solana Program
+                    participant Bob
+
+                    Alice->>SDK: Initiate Transfer to Bob
+                    SDK->>SDK: Generate ZK Proof
+                    SDK->>SDK: Generate Nullifier
+                    SDK->>Relayer: Send Proof + Nullifier + Bob (Off-chain)
+                    Note over Relayer: Relayer Pays Gas Fees
+                    Relayer->>Program: Proxy Transaction
+                    Program->>Program: Verify ZK-Proof & Nullifier
+                    Program->>Bob: Release 0.1 SOL
+                </div>
+            </div>
+        </section>
+
+        <section id="transparency">
+            <h2>Technical Transparency</h2>
+            <div class="card" style="border-left: 4px solid #f59e0b; background: rgba(245, 158, 11, 0.05);">
+                <p><strong>Note on Demo Verification:</strong> In this Alpha version, on-chain ZK verification is logged
+                    as "Skipped" in the program logs. This is a deliberate design choice for the demo environment:</p>
+                <ul>
+                    <li><strong>Compute Limits</strong>: Software-based Groth16 verification is extremely heavy (2M+
+                        Compute Units). To ensure the demo runs on local validators without requiring specialized
+                        <code>alt_bn128</code> hardware acceleration setup, we simulate the 'Success' state by default.
+                    </li>
+                    <li><strong>Enabling Real Checks</strong>: You can now enable strict verification by rebuilding the
+                        program with the <code>real-zk-verification</code> feature flag:
+                        <br><code>cargo build-sbf --features real-zk-verification</code>
+                    </li>
+                    <li><strong>Production Path</strong>: In a mainnet environment, we utilize Solana's specialized ZK
+                        syscalls to achieve sub-10ms verification times within the standard 200k CU budget.</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="conclusion">
+            <h2>Why it works</h2>
+            <div class="card">
+                <p>By combining <strong>ZK-SNARKs</strong> with a <strong>Relayer network</strong>, we achieve two types
+                    of privacy:</p>
+                <ul>
+                    <li><strong>Data Privacy</strong>: No one knows *which* deposit is being spent (ZK-Proof).</li>
+                    <li><strong>Metadata Privacy</strong>: No one knows *who* triggered the withdrawal (Relayer).</li>
+                </ul>
+
+                <p><strong>Total SOL Transferred:</strong> 0.1 SOL<br>
+                    <strong>Signer Linkability:</strong> 0% (Relayed)<br>
+                    <strong>Privacy Level:</strong> Absolute Shadow
+                </p>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#10b981',
+                primaryTextColor: '#fff',
+                primaryBorderColor: '#10b981',
+                lineColor: '#a1a1aa',
+                secondaryColor: '#18181b',
+                tertiaryColor: '#09090b'
+            }
+        });
+    </script>
+</body>
+
+</html>

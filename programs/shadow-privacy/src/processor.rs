@@ -1,7 +1,7 @@
 use crate::{
     error::PrivacyError,
     instruction::PrivacyInstruction,
-    state::{AssetState, Commitment, PoolState, ShieldedNote, VerificationKeyAccount, CircuitType, RelayerAccount},
+    state::{AssetState, PoolState, VerificationKeyAccount, CircuitType, RelayerAccount},
     verifier,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -11,7 +11,6 @@ use solana_program::{
     msg,
     program::{invoke, invoke_signed},
     program_error::ProgramError,
-    program_pack::Pack,
     pubkey::Pubkey,
     rent::Rent,
     system_instruction,
@@ -311,12 +310,18 @@ impl Processor {
         }
 
         // Verify merkle root
-        // TODO: In production, sync the hash function between TypeScript and Rust
-        // For demo, we skip this check since TS uses SHA-256 Merkle tree and Rust uses simplified hash
-        // if root != pool_state.merkle_root {
-        //     return Err(PrivacyError::InvalidMerkleRoot.into());
-        // }
-        msg!("Merkle root check skipped for demo (hash mismatch)");
+        #[cfg(feature = "real-zk-verification")]
+        {
+            if root != pool_state.merkle_root {
+                msg!("✗ Invalid Merkle root: expected {:?}, got {:?}", pool_state.merkle_root, root);
+                return Err(PrivacyError::InvalidMerkleRoot.into());
+            }
+            msg!("✓ Merkle root verified");
+        }
+        #[cfg(not(feature = "real-zk-verification"))]
+        {
+            msg!("Merkle root check skipped for demo (hash mismatch)");
+        }
 
         // Verify ZK proof
         let public_inputs = vec![

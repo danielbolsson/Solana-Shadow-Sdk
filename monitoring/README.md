@@ -50,9 +50,9 @@ Set environment variables:
 export MONITOR_PORT=5000
 
 # Shadow configuration (automatically loaded)
-export GHOST_ENV=mainnet
-export GHOST_RPC_URL=https://api.mainnet-beta.solana.com
-export GHOST_PROGRAM_ID=<your_program_id>
+export SHADOW_ENV=mainnet
+export SHADOW_RPC_URL=https://api.mainnet-beta.solana.com
+export SHADOW_PROGRAM_ID=<your_program_id>
 ```
 
 ## Usage
@@ -142,6 +142,21 @@ Record relayer activity
   "responseTime": 456,
   "success": true,
   "feeRate": 0.001
+}
+```
+
+**POST /api/relayer/withdraw**
+Receive proof and proxy withdrawal (Mock Relayer)
+```json
+{
+  "poolAddress": "...",
+  "vaultAddress": "...",
+  "recipient": "...",
+  "vkAddress": "...",
+  "proof": "hex_string",
+  "commitment": "hex_string",
+  "nullifier": "hex_string",
+  "amount": "100000000"
 }
 ```
 

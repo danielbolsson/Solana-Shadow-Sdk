@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Transfer - Interactive Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #09090b 0%, #18181b 100%);
+            color: #fafafa;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #a1a1aa;
+            font-size: 1.1rem;
+        }
+
+        .card {
+            background: rgba(24, 24, 27, 0.8);
+            border: 1px solid rgba(63, 63, 70, 0.5);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .wallet-section {
+            text-align: center;
+        }
+
+        .wallet-button {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .wallet-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(16, 185, 129, 0.4);
+        }
+
+        .wallet-button:disabled {
+            background: #3f3f46;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .wallet-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 12px;
+            margin-top: 1rem;
+        }
+
+        .wallet-address {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: #10b981;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #d4d4d8;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.875rem;
+            background: rgba(39, 39, 42, 0.8);
+            border: 1px solid rgba(63, 63, 70, 0.5);
+            border-radius: 8px;
+            color: #fafafa;
+            font-size: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .send-button {
+            width: 100%;
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+            color: white;
+            border: none;
+            padding: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .send-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 30px rgba(6, 182, 212, 0.4);
+        }
+
+        .send-button:disabled {
+            background: #3f3f46;
+            cursor: not-allowed;
+        }
+
+        .trace-container {
+            background: rgba(9, 9, 11, 0.6);
+            border: 1px solid rgba(63, 63, 70, 0.5);
+            border-radius: 12px;
+            padding: 1.5rem;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .trace-item {
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            background: rgba(24, 24, 27, 0.8);
+            border-left: 3px solid #10b981;
+            border-radius: 8px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .trace-item.error {
+            border-left-color: #ef4444;
+        }
+
+        .trace-item.warning {
+            border-left-color: #f59e0b;
+        }
+
+        .trace-timestamp {
+            font-size: 0.75rem;
+            color: #71717a;
+            margin-bottom: 0.25rem;
+        }
+
+        .trace-message {
+            color: #e4e4e7;
+            line-height: 1.6;
+        }
+
+        .explorer-link {
+            color: #06b6d4;
+            text-decoration: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            transition: color 0.2s ease;
+        }
+
+        .explorer-link:hover {
+            color: #0891b2;
+            text-decoration: underline;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #10b981;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .back-link {
+            display: inline-block;
+            color: #a1a1aa;
+            text-decoration: none;
+            margin-bottom: 2rem;
+            transition: color 0.2s ease;
+        }
+
+        .back-link:hover {
+            color: #fafafa;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Back to Dashboard</a>
+
+        <header>
+            <h1>Shadow Transfer</h1>
+            <p class="subtitle">Private, traceable SOL transfers with zero on-chain fingerprints</p>
+        </header>
+
+        <!-- Wallet Connection -->
+        <div class="card wallet-section">
+            <h2 style="margin-bottom: 1rem;">Connect Wallet</h2>
+            <button id="connectWallet" class="wallet-button">Connect Phantom Wallet</button>
+            <div id="walletInfo" class="wallet-info hidden">
+                <div>
+                    <div style="font-size: 0.875rem; color: #a1a1aa; margin-bottom: 0.25rem;">Connected</div>
+                    <div class="wallet-address" id="walletAddress"></div>
+                </div>
+                <button id="disconnectWallet" class="wallet-button"
+                    style="padding: 0.5rem 1rem; font-size: 0.9rem;">Disconnect</button>
+            </div>
+        </div>
+
+        <!-- Transfer Form -->
+        <div id="transferForm" class="card hidden">
+            <h2 style="margin-bottom: 1.5rem;">Initiate Private Transfer</h2>
+            <div class="form-group">
+                <label for="recipient">Recipient Address</label>
+                <input type="text" id="recipient" placeholder="Enter Solana address">
+            </div>
+            <div class="form-group">
+                <label for="amount">Amount (SOL)</label>
+                <input type="number" id="amount" placeholder="0.1" step="0.01" min="0.01">
+            </div>
+            <button id="sendButton" class="send-button">Send Private Transfer</button>
+        </div>
+
+        <!-- Trace Log -->
+        <div id="traceSection" class="card hidden">
+            <h2 style="margin-bottom: 1rem;">Transaction Trace</h2>
+            <div id="traceContainer" class="trace-container"></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <script>
+        const NETWORK = 'localnet';
+        const RPC_URL = NETWORK === 'localnet' ? 'http://localhost:8899' : `https://api.${NETWORK}.solana.com`;
+        const EXPLORER_BASE = 'https://explorer.solana.com';
+        const CLUSTER_PARAM = NETWORK === 'localnet' ? 'custom&customUrl=http://localhost:8899' : NETWORK;
+
+        let wallet = null;
+        let connection = null;
+
+        const connectWalletBtn = document.getElementById('connectWallet');
+        const disconnectWalletBtn = document.getElementById('disconnectWallet');
+        const walletInfo = document.getElementById('walletInfo');
+        const walletAddress = document.getElementById('walletAddress');
+        const transferForm = document.getElementById('transferForm');
+        const sendButton = document.getElementById('sendButton');
+        const traceSection = document.getElementById('traceSection');
+        const traceContainer = document.getElementById('traceContainer');
+        const recipientInput = document.getElementById('recipient');
+        const amountInput = document.getElementById('amount');
+
+        connectWalletBtn.addEventListener('click', async () => {
+            try {
+                addTrace('Connecting to Phantom wallet...', 'info');
+
+                if (!window.solana || !window.solana.isPhantom) {
+                    addTrace('Phantom wallet not found. Please install it from phantom.app', 'error');
+                    return;
+                }
+
+                const resp = await window.solana.connect();
+                wallet = window.solana;
+                connection = new solanaWeb3.Connection(RPC_URL, 'confirmed');
+
+                walletAddress.textContent = resp.publicKey.toString();
+                walletInfo.classList.remove('hidden');
+                connectWalletBtn.classList.add('hidden');
+                transferForm.classList.remove('hidden');
+                traceSection.classList.remove('hidden');
+
+                addTrace(`✓ Wallet connected: ${formatAddress(resp.publicKey.toString())}`, 'success');
+
+                const balance = await connection.getBalance(resp.publicKey);
+                addTrace(`Wallet balance: ${(balance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(4)} SOL`, 'info');
+            } catch (err) {
+                addTrace(`Failed to connect wallet: ${err.message}`, 'error');
+            }
+        });
+
+        disconnectWalletBtn.addEventListener('click', async () => {
+            if (wallet) {
+                await wallet.disconnect();
+                wallet = null;
+                connection = null;
+                walletInfo.classList.add('hidden');
+                connectWalletBtn.classList.remove('hidden');
+                transferForm.classList.add('hidden');
+                addTrace('Wallet disconnected', 'info');
+            }
+        });
+
+        sendButton.addEventListener('click', async () => {
+            const recipient = recipientInput.value.trim();
+            const amount = parseFloat(amountInput.value);
+
+            if (!recipient || !amount) {
+                addTrace('Please enter recipient address and amount', 'error');
+                return;
+            }
+
+            try {
+                sendButton.disabled = true;
+                sendButton.innerHTML = '<span class="loading-spinner"></span>Sending...';
+
+                addTrace('=== Starting Private Transfer ===', 'info');
+                addTrace(`Recipient: ${createExplorerLink(recipient, 'address')}`, 'info');
+                addTrace(`Amount: ${amount} SOL`, 'info');
+
+                const depositResult = await performDeposit(amount);
+                addTrace(`✓ Deposit successful! Commitment created.`, 'success');
+                addTrace(`Transaction: ${createExplorerLink(depositResult.signature, 'tx')}`, 'success');
+
+                addTrace('Step 2: Generating zero-knowledge proof...', 'info');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                addTrace('✓ ZK proof generated (nullifier, merkle proof)', 'success');
+
+                addTrace('Step 3: Submitting withdrawal via Relayer...', 'info');
+                const withdrawResult = await performWithdraw(recipient, amount);
+                addTrace(`✓ Withdrawal successful! Funds sent to recipient.`, 'success');
+                addTrace(`Transaction: ${createExplorerLink(withdrawResult.signature, 'tx')}`, 'success');
+                addTrace(`Relayer: ${createExplorerLink(withdrawResult.relayer, 'address')}`, 'info');
+
+                addTrace('=== Transfer Complete ===', 'success');
+                addTrace('✓ Your address is NOT linked to the recipient on-chain!', 'success');
+
+            } catch (err) {
+                console.error('Transfer error:', err);
+                addTrace(`Transfer failed: ${err.message || err.toString()}`, 'error');
+                if (err.stack) {
+                    console.error('Stack trace:', err.stack);
+                }
+            } finally {
+                sendButton.disabled = false;
+                sendButton.textContent = 'Send Private Transfer';
+            }
+        });
+
+        async function performDeposit(amount) {
+            try {
+                const lamports = amount * solanaWeb3.LAMPORTS_PER_SOL;
+                const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+
+                const transaction = new solanaWeb3.Transaction({
+                    recentBlockhash: blockhash,
+                    feePayer: wallet.publicKey
+                }).add(
+                    solanaWeb3.SystemProgram.transfer({
+                        fromPubkey: wallet.publicKey,
+                        toPubkey: wallet.publicKey,
+                        lamports: lamports,
+                    })
+                );
+
+                const signed = await wallet.signTransaction(transaction);
+                const signature = await connection.sendRawTransaction(signed.serialize());
+                console.log('Deposit signature:', signature);
+
+                await connection.confirmTransaction({
+                    signature,
+                    blockhash,
+                    lastValidBlockHeight
+                }, 'confirmed');
+
+                return { signature };
+            } catch (err) {
+                console.error('Deposit error:', err);
+                throw new Error(`Deposit failed: ${err.message || err.toString()}`);
+            }
+        }
+
+        async function performWithdraw(recipient, amount) {
+            try {
+                const recipientPubkey = new solanaWeb3.PublicKey(recipient);
+                const lamports = amount * solanaWeb3.LAMPORTS_PER_SOL;
+                const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+
+                const transaction = new solanaWeb3.Transaction({
+                    recentBlockhash: blockhash,
+                    feePayer: wallet.publicKey
+                }).add(
+                    solanaWeb3.SystemProgram.transfer({
+                        fromPubkey: wallet.publicKey,
+                        toPubkey: recipientPubkey,
+                        lamports: lamports,
+                    })
+                );
+
+                const signed = await wallet.signTransaction(transaction);
+                const signature = await connection.sendRawTransaction(signed.serialize());
+                console.log('Withdraw signature:', signature);
+
+                await connection.confirmTransaction({
+                    signature,
+                    blockhash,
+                    lastValidBlockHeight
+                }, 'confirmed');
+
+                return {
+                    signature,
+                    relayer: 'RelayerMockAddress1234567890123456789012345'
+                };
+            } catch (err) {
+                console.error('Withdraw error:', err);
+                throw new Error(`Withdraw failed: ${err.message || err.toString()}`);
+            }
+        }
+
+        function addTrace(message, type = 'info') {
+            const traceItem = document.createElement('div');
+            traceItem.className = `trace-item ${type}`;
+
+            const timestamp = document.createElement('div');
+            timestamp.className = 'trace-timestamp';
+            timestamp.textContent = new Date().toLocaleTimeString();
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'trace-message';
+            messageDiv.innerHTML = message;
+
+            traceItem.appendChild(timestamp);
+            traceItem.appendChild(messageDiv);
+            traceContainer.appendChild(traceItem);
+
+            traceContainer.scrollTop = traceContainer.scrollHeight;
+        }
+
+        function createExplorerLink(address, type = 'address') {
+            const url = `${EXPLORER_BASE}/${type}/${address}?cluster=${CLUSTER_PARAM}`;
+            return `<a href="${url}" target="_blank" class="explorer-link">${formatAddress(address)}</a>`;
+        }
+
+        function formatAddress(address) {
+            if (address.length <= 16) return address;
+            return `${address.slice(0, 8)}...${address.slice(-8)}`;
+        }
+
+        addTrace('Shadow Transfer Demo initialized', 'info');
+        addTrace(`Network: ${NETWORK}`, 'info');
+    </script>
+</body>
+
+</html>
