@@ -5,7 +5,25 @@
 
 set -e
 
-echo "🔧 Building Shadow SDK circuits..."
+# Ensure ~/.cargo/bin is in PATH (standard location for rust binaries)
+export PATH="$HOME/.cargo/bin:$PATH"
+
+# Check circom version
+if ! command -v circom &> /dev/null; then
+    echo "❌ Error: 'circom' could not be found."
+    echo "Please install it using: cargo install --git https://github.com/iden3/circom.git"
+    exit 1
+fi
+
+CIRCOM_VERSION=$(circom --version | head -n 1 | awk '{print $3}')
+if [[ "$CIRCOM_VERSION" != 2.* ]]; then
+    echo "❌ Error: circom version ${CIRCOM_VERSION} is too old or invalid."
+    echo "Please install the Rust-based circom 2.x (not the npm package)."
+    echo "Run: npm uninstall -g circom && cargo install --git https://github.com/iden3/circom.git"
+    exit 1
+fi
+
+echo "✅ Using circom version: ${CIRCOM_VERSION}"
 
 # Create build directory
 mkdir -p build
