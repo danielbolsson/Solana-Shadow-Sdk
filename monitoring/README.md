@@ -293,7 +293,7 @@ CMD ["node", "dashboard-server.js"]
 ### Using PM2
 
 ```bash
-pm2 start monitoring/dashboard-server.ts --name ghost-monitor
+pm2 start monitoring/dashboard-server.ts --name shadow-monitor
 pm2 save
 pm2 startup
 ```
@@ -303,7 +303,7 @@ pm2 startup
 ```nginx
 server {
   listen 80;
-  server_name monitor.ghostprivacy.io;
+  server_name monitor.shadow-protocol.io;
 
   location / {
     proxy_pass http://localhost:5000;

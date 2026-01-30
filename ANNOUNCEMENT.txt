@@ -1,4 +1,4 @@
-Shadow Privacy: Production-Ready zkSNARK Privacy for Solana 👻
+Shadow Privacy: Production-Ready zkSNARK Privacy for Solana 🛡️
 
 Privacy is a fundamental right, and Shadow Protocol is bringing battle-tested zero-knowledge technology to Solana developers everywhere.
 
@@ -167,7 +167,7 @@ await sdk.withdrawViaRelayer(
   note,
   recipient,
   amount,
-  'https://relayer.ghostprivacy.io'
+  'https://relayer.shadow-protocol.io'
 );
 
 Relayers submit transactions on behalf of users, completely hiding the connection between deposits and withdrawals. The reputation system prevents malicious relayers while maintaining decentralization.
@@ -176,7 +176,7 @@ SDK: Complete Privacy Abstraction
 
 The Shadow SDK handles all complexity, giving developers a clean interface:
 
-import { ShadowPrivacySDK } from '@ghost/sdk';
+import { ShadowPrivacySDK } from '@shadow-sdk/core';
 
 const sdk = new ShadowPrivacySDK();
 await sdk.initialize();
@@ -232,9 +232,9 @@ Start Building Private Solana Apps Today
 
 Shadow Privacy is open source and ready for developers:
 
-Repository: https://github.com/Shadow-Sdk/Shadow-Sdk
+Repository: https://github.com/Shadow-Protocol/Shadow-Sdk
 Documentation: Complete guides in PRODUCTION_SETUP.md and TRUSTED_SETUP.md
 Ceremony Tools: Full coordinator and participant CLI included
 License: MIT
 
-Join the privacy revolution on Solana. 👻
+Join the privacy revolution on Solana. 🛡️

@@ -1,5 +1,5 @@
 {
-  "name": "@ghost/monitoring",
+  "name": "@shadow-sdk/monitoring",
   "version": "1.0.0",
   "description": "Real-time monitoring dashboard for Shadow Privacy Protocol",
   "main": "dashboard-server.ts",
@@ -10,7 +10,7 @@
     "test": "jest"
   },
   "keywords": [
-    "ghost",
+    "shadow",
     "privacy",
     "monitoring",
     "metrics",

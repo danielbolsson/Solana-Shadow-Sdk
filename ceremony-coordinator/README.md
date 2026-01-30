@@ -134,7 +134,7 @@ cd ceremony-coordinator
 npm install
 
 # If coordinator is remote, set URL
-export COORDINATOR_URL="https://ceremony.ghostprivacy.io"
+export COORDINATOR_URL="https://ceremony.shadow-protocol.io"
 ```
 
 ### 2. Run Participant CLI
@@ -321,6 +321,8 @@ Anyone can verify the ceremony was performed correctly:
 snarkjs powersoftau verify data/current/pot20_final.ptau
 
 # Verify each circuit
+wget https://setup.shadow-protocol.io/transfer_final.zkey
+wget https://setup.shadow-protocol.io/pot20_final.ptau
 snarkjs zkey verify \
   ../circuits/build/transfer.r1cs \
   data/current/pot20_final.ptau \
@@ -380,7 +382,7 @@ snarkjs zkey verify \
 
 ## Support
 
-- Issues: https://github.com/Shadow-Sdk/Shadow-Sdk/issues
+- Issues: https://github.com/Shadow-Protocol/Shadow-Sdk/issues
 - Documentation: `../TRUSTED_SETUP.md`
 - Community: [Your Discord/Telegram]
 

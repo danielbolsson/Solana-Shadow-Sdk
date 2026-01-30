@@ -34,7 +34,7 @@ echo ""
 
 # Build Solana program
 echo "Building Solana program..."
-cd programs/ghost-privacy
+cd programs/shadow-privacy
 cargo build-bpf --release
 
 if [ $? -ne 0 ]; then
@@ -56,7 +56,7 @@ if [ "$confirm" != "yes" ]; then
 fi
 
 solana config set --url mainnet-beta
-solana program deploy programs/ghost-privacy/target/deploy/ghost_privacy.so
+solana program deploy programs/shadow-privacy/target/deploy/shadow_privacy.so
 
 if [ $? -ne 0 ]; then
   echo "Program deployment FAILED"
@@ -64,7 +64,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # Get program ID
-PROGRAM_ID=$(solana program show programs/ghost-privacy/target/deploy/ghost_privacy.so --output json | jq -r '.programId')
+PROGRAM_ID=$(solana program show programs/shadow-privacy/target/deploy/shadow_privacy.so --output json | jq -r '.programId')
 
 echo ""
 echo "========================================="

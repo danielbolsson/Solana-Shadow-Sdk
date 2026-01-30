@@ -1,0 +1,39 @@
+# Git
+.git
+.gitignore
+
+# Dependencies
+node_modules
+**/node_modules
+
+# Secrets & Keys (CRITICAL)
+.env*
+*.key
+*.pem
+*.secret
+*wallet.json
+secrets/
+keys/
+id.json
+relayer.json
+
+# Local artifacts
+dist/
+build/
+!circuits/build/
+output/
+target/
+test-ledger/
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Misc
+.DS_Store
+.vscode
+.idea
+*.swp
+*.bak
+circom.exe

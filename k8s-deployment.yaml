@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shadow-server
+  labels:
+    app: shadow-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shadow-server
+  template:
+    metadata:
+      labels:
+        app: shadow-server
+    spec:
+      containers:
+      - name: shadow-server
+        image: shadow-protocol/server:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5000
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: RELAYER_KEYPAIR_PATH
+          value: "/etc/secrets/relayer.json"
+        - name: SHADOW_ENV
+          value: "devnet"
+        - name: SHADOW_RPC_URL
+          value: "https://api.devnet.solana.com"
+        - name: SHADOW_PROGRAM_ID
+          value: "x6ofF4ZJFtXd7BTGV8UB6TBYkE2Vwx7WMmuQCvJKLUV"
+        volumeMounts:
+        - name: relayer-secret
+          mountPath: "/etc/secrets"
+          readOnly: true
+      volumes:
+      - name: relayer-secret
+        secret:
+          secretName: relayer-wallet-secret
+          items:
+          - key: relayer.json
+            path: relayer.json
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shadow-server
+spec:
+  selector:
+    app: shadow-server
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
+  type: LoadBalancer

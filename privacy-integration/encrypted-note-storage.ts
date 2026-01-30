@@ -25,7 +25,7 @@ export class EncryptedNoteStorage {
   private initialized: boolean = false;
 
   constructor(storageDir?: string) {
-    this.storageDir = storageDir || path.join(process.env.HOME || process.env.USERPROFILE || '.', '.ghost-privacy');
+    this.storageDir = storageDir || path.join(process.env.HOME || process.env.USERPROFILE || '.', '.shadow-privacy');
 
     if (!fs.existsSync(this.storageDir)) {
       fs.mkdirSync(this.storageDir, { recursive: true, mode: 0o700 });

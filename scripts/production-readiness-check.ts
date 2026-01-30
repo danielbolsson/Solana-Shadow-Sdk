@@ -24,7 +24,7 @@ interface CheckResult {
 class ProductionReadinessChecker {
   private results: CheckResult[] = [];
   private readonly BUILD_DIR = path.join(__dirname, '..', 'circuits', 'build');
-  private readonly PROGRAM_DIR = path.join(__dirname, '..', 'programs', 'ghost-privacy');
+  private readonly PROGRAM_DIR = path.join(__dirname, '..', 'programs', 'shadow-privacy');
 
   async runAllChecks(): Promise<void> {
     console.log('========================================');
@@ -294,7 +294,7 @@ class ProductionReadinessChecker {
     console.log('Checking Solana Program...\n');
 
     // Check if program is built
-    const programPath = path.join(this.PROGRAM_DIR, 'target', 'deploy', 'ghost_privacy.so');
+    const programPath = path.join(this.PROGRAM_DIR, 'target', 'deploy', 'shadow_privacy.so');
 
     if (fs.existsSync(programPath)) {
       this.addResult({

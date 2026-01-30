@@ -15,7 +15,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
-[![Solana](https://img.shields.io/badge/Solana-Mainnet-blueviolet)](https://solana.com)
+[![Solana](https://img.shields.io/badge/Solana-Devnet-blueviolet)](https://solana.com)
 [![ZK-SNARKs](https://img.shields.io/badge/ZK--SNARKs-Groth16-blue)](https://eprint.iacr.org/2016/260)
 
 *Groth16 ZK-SNARKs • Poseidon Hashing • MLSAG Ring Signatures • Relayer Network*
@@ -89,7 +89,7 @@ sequenceDiagram
 | **On-Chain Logic** | ✅ Production | `shadow-privacy` program with `ark-groth16` |
 | **Verification** | ✅ Validated | Strictly enforces proofs via `real-zk-verification` flag |
 | **Relayer** | ✅ Active | Secure relayer service preventing metadata leakage |
-| **Audit** | ❌ Pending | Scheduled for Q3 2024 |
+| **Audit** | ❌ Pending | TBD |
 
 ---
 

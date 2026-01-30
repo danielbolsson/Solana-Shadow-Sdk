@@ -55,7 +55,7 @@ function clearScreen() {
 }
 
 function printHeader() {
-  console.log(`\n${colors.magenta}👻 GHOST PRIVACY${colors.reset} - Maximum Anonymity\n`);
+  console.log(`\n${colors.magenta}🛡️ SHADOW PRIVACY${colors.reset} - Maximum Anonymity\n`);
 }
 
 function printBalance() {

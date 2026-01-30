@@ -117,12 +117,12 @@ All critical checks must pass.
 
 ```bash
 # Build
-cd programs/ghost-privacy
+cd programs/shadow-privacy
 cargo build-bpf --release
 
 # Deploy
 solana config set --url mainnet-beta
-solana program deploy target/deploy/ghost_privacy.so
+solana program deploy target/deploy/shadow_privacy.so
 
 # Note the program ID from output
 ```

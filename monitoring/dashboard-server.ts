@@ -129,8 +129,12 @@ app.post('/api/relayer/withdraw', async (req, res) => {
     const connection = new Connection(cfg.network.rpcUrl, 'confirmed');
 
     // Use the pre-funded relayer keypair
+    const keypairPath = process.env.RELAYER_KEYPAIR_PATH || '/home/daniel/.config/solana/relayer.json';
+    if (!fs.existsSync(keypairPath)) {
+      throw new Error(`Relayer keypair not found at: ${keypairPath}`);
+    }
     const relayerKeypair = Keypair.fromSecretKey(
-      Uint8Array.from(JSON.parse(fs.readFileSync('/home/daniel/.config/solana/relayer.json', 'utf-8')))
+      Uint8Array.from(JSON.parse(fs.readFileSync(keypairPath, 'utf-8')))
     );
     console.log(`   [RELAYER] Relayer Address: ${relayerKeypair.publicKey.toBase58()}`);
     console.log(`   [RELAYER] Relayer Balance: ${(await connection.getBalance(relayerKeypair.publicKey)) / 1e9} SOL`);

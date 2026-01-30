@@ -1,5 +1,5 @@
 {
-  "name": "@ghost-sdk/privacy-integration",
+  "name": "@shadow-sdk/privacy-integration",
   "version": "1.0.0",
   "description": "Complete privacy integration with ZK proofs, Merkle trees, and Solana",
   "main": "privacy-sdk.ts",

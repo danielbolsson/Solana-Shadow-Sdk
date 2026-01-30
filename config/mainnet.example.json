@@ -16,9 +16,9 @@
   "relayer": {
     "enabled": true,
     "endpoints": [
-      "https://relayer1.ghostprivacy.io",
-      "https://relayer2.ghostprivacy.io",
-      "https://relayer3.ghostprivacy.io"
+      "https://relayer1.shadow-protocol.io",
+      "https://relayer2.shadow-protocol.io",
+      "https://relayer3.shadow-protocol.io"
     ],
     "minReputation": 75,
     "timeout": 30000

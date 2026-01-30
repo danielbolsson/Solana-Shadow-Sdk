@@ -1,5 +1,5 @@
 {
-  "name": "ghost-privacy-ceremony-coordinator",
+  "name": "@shadow-sdk/ceremony-coordinator",
   "version": "1.0.0",
   "description": "Real multi-party trusted setup ceremony coordinator for Shadow Privacy",
   "main": "server.js",

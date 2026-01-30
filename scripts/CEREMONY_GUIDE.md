@@ -54,8 +54,8 @@ For production deployment with real participants:
 
 **Create ceremony repository:**
 ```bash
-mkdir ghost-ceremony
-cd ghost-ceremony
+mkdir shadow-ceremony
+cd shadow-ceremony
 git init
 ```
 
@@ -344,8 +344,8 @@ Anyone can verify the ceremony:
 
 ```bash
 # Download files
-wget https://setup.ghostprivacy.io/transfer_final.zkey
-wget https://setup.ghostprivacy.io/pot20_final.ptau
+wget https://setup.shadow-protocol.io/transfer_final.zkey
+wget https://setup.shadow-protocol.io/pot20_final.ptau
 
 # Verify
 snarkjs zkey verify circuits/transfer.r1cs pot20_final.ptau transfer_final.zkey
