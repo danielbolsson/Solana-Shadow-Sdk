@@ -7,23 +7,25 @@ RUN apt-get update && apt-get install -y python3 make g++ git && rm -rf /var/lib
 
 # Copy package files first to leverage caching
 COPY package.json package-lock.json ./
-COPY monitoring/package.json monitoring/package-lock.json ./monitoring/
 COPY privacy-integration/package.json privacy-integration/package-lock.json ./privacy-integration/
 COPY packages/core/package.json ./packages/core/
 COPY circuits/package.json ./circuits/
+COPY web-dashboard/package.json web-dashboard/package-lock.json ./web-dashboard/
 
-# Install dependencies
+# Install dependencies (using npm workspaces)
 RUN npm install
-RUN cd monitoring && npm install
-RUN cd privacy-integration && npm install
-RUN cd circuits && npm install
-# Note: packages/core depends on root typescript, installed via root npm install
+
+# Build core packages
+RUN npm run build
+
+# Install dashboard dependencies specifically if needed (though root install should cover it)
+RUN cd web-dashboard && npm install
 
 # Copy source code
 COPY . .
 
 # Build circuits if needed (optional, but good for verification)
-# RUN cd circuits && ./build.sh 
+# RUN cd circuits && ./build.sh
 # (Skipping build to save time, assuming pre-built artifacts are copied or not strictly needed for just running the server if logic is detached)
 # Actually, dashboard server assumes circuits are built if it references keys? 
 # shadow-config.json references "circuits/build/..."

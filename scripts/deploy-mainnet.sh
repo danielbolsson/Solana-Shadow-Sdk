@@ -35,7 +35,7 @@ echo ""
 # Build Solana program
 echo "Building Solana program..."
 cd programs/shadow-privacy
-cargo build-bpf --release
+cargo build-bpf
 
 if [ $? -ne 0 ]; then
   echo "Program build FAILED"

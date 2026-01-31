@@ -4,9 +4,14 @@
   "description": "Ultimate privacy SDK for Solana - combining Shadow ZK proofs, Monero ring signatures, and Zcash shielded assets",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "web-dashboard",
+    "circuits",
+    "privacy-integration",
+    "ceremony-coordinator"
   ],
   "scripts": {
+    "start": "cd web-dashboard && npm start",
     "build": "turbo run build",
     "dev": "turbo run dev",
     "test": "turbo run test",
@@ -19,9 +24,11 @@
     "program:deploy": "cd programs/shadow-privacy && solana program deploy target/deploy/shadow_privacy.so"
   },
   "devDependencies": {
+    "@types/node": "^20.10.5",
+    "esbuild": "^0.27.2",
+    "esbuild-plugin-polyfill-node": "^0.3.0",
     "turbo": "^1.10.16",
-    "typescript": "^5.3.3",
-    "@types/node": "^20.10.5"
+    "typescript": "^5.3.3"
   },
   "engines": {
     "node": ">=18.0.0",

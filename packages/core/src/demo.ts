@@ -48,7 +48,7 @@ async function main() {
     }
 
     const circuitsPath = path.resolve(__dirname, '../../../circuits/build');
-    const programId = new PublicKey('JE6No6rp9mbo4BBhwZFbnj6P4xiALuaRzQ4o9ju2fXHN');
+    const programId = new PublicKey('9zDon3j8n18wFFXP5YSRPWdy4vxyvnz7gNraRt2WYd3b');
 
     const client = new ShadowClient({
         connection,

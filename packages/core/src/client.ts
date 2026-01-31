@@ -48,6 +48,12 @@ export class ShadowClient {
     this.nullifiers = new Set();
     this.privateKey = randomBytes(32);
     this.publicKey = new Uint8Array(32);
+
+    console.log('🏗️ ShadowClient Config:', {
+      programId: this.programId.toString(),
+      relayerUrl: this.relayerUrl,
+      circuitsPath: this.circuitsPath
+    });
   }
 
   /**
@@ -65,6 +71,21 @@ export class ShadowClient {
 
     console.log('✅ Shadow SDK initialized');
     console.log('   Public key:', Buffer.from((this.publicKey as any).toString(16).padStart(64, '0'), 'hex').toString('hex').slice(0, 16) + '...');
+
+    try {
+      // DEBUG: Verify network connection
+      const genesis = await this.connection.getGenesisHash();
+      console.log('   Network Genesis Hash:', genesis);
+      if (genesis === '5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d') {
+        console.log('   (Confirmed Mainnet Beta)');
+      } else if (genesis === 'EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG') {
+        console.log('   (Confirmed Devnet)');
+      } else {
+        console.log('   (Unknown/Localnet)');
+      }
+    } catch (e) {
+      console.warn('   Could not fetch genesis hash:', e);
+    }
   }
 
   /**
@@ -241,6 +262,18 @@ export class ShadowClient {
   /**
    * Deposit into privacy pool
    */
+  /**
+   * Get deterministic pool keypair for a denomination
+   */
+  getPoolKeypair(amount: bigint): Keypair {
+    const seedContent = `pool-${amount.toString()}`;
+    const hash = sha256(new TextEncoder().encode(seedContent));
+    return Keypair.fromSeed(hash.slice(0, 32));
+  }
+
+  /**
+   * Deposit into privacy pool
+   */
   async deposit(params: DepositParams): Promise<string> {
     console.log('💰 Depositing into privacy pool...');
     console.log('   Amount:', params.amount.toString(), 'lamports');
@@ -254,17 +287,27 @@ export class ShadowClient {
     const commitmentKey = Buffer.from(commitment.value).toString('hex');
     this.commitments.set(commitmentKey, commitment);
 
-    // Use currentPoolAddress if set, otherwise fallback to PDA derivation
-    const poolAddress = this.currentPoolAddress || PublicKey.findProgramAddressSync(
-      [Buffer.from('pool'), Buffer.from(params.amount.toString())],
-      this.programId
-    )[0];
+    // Get deterministic pool account
+    const poolKeypair = this.getPoolKeypair(params.amount);
+    const poolAddress = poolKeypair.publicKey;
+
+    // Check if pool exists
+    const accountInfo = await this.connection.getAccountInfo(poolAddress);
+    if (!accountInfo) {
+      console.log('⚠️ Pool not initialized. Initializing now...');
+      await this.initializePool(poolKeypair, params.amount);
+      console.log('✅ Pool auto-initialized');
+      // Wait for RPC to catch up
+      console.log('⏳ Waiting for block propagation...');
+      await new Promise(r => setTimeout(r, 2000));
+    }
 
     const [vaultAddress] = PublicKey.findProgramAddressSync(
       [Buffer.from('vault'), poolAddress.toBuffer()],
       this.programId
     );
 
+    console.log('📝 Building deposit transaction...');
     // Build instruction
     const instruction = new TransactionInstruction({
       keys: [
@@ -281,7 +324,7 @@ export class ShadowClient {
     const transaction = new Transaction().add(instruction);
     const signature = await this.sendAndConfirm(transaction);
 
-    console.log('✅ Deposit successful!');
+    console.log('✅ Deposit successful! Sig:', signature);
     return signature;
   }
 
@@ -374,11 +417,9 @@ export class ShadowClient {
       nullifier: nullifierKey,
     });
 
-    // Use currentPoolAddress if set
-    const poolAddress = this.currentPoolAddress || PublicKey.findProgramAddressSync(
-      [Buffer.from('pool'), Buffer.from(params.amount.toString())],
-      this.programId
-    )[0];
+    // Get deterministic pool account
+    const poolKeypair = this.getPoolKeypair(params.amount);
+    const poolAddress = poolKeypair.publicKey;
 
     const [vaultAddress] = PublicKey.findProgramAddressSync(
       [Buffer.from('vault'), poolAddress.toBuffer()],
@@ -411,6 +452,7 @@ export class ShadowClient {
       ),
     });
     // Send transaction (Directly or via Relayer)
+    console.log(`Checking Relayer URL: '${this.relayerUrl}'`);
     if (this.relayerUrl) {
       console.log('🔗 Sending transaction via Relayer...');
       const response = await fetch(`${this.relayerUrl}/api/relayer/withdraw`, {
@@ -618,19 +660,70 @@ export class ShadowClient {
   }
 
   private async sendAndConfirm(transaction: Transaction, extraSigners: Keypair[] = []): Promise<string> {
-    const { blockhash } = await this.connection.getLatestBlockhash();
-    transaction.recentBlockhash = blockhash;
-    transaction.feePayer = this.wallet.publicKey;
+    let retries = 5;
+    let lastError: any;
 
-    if (extraSigners.length > 0) {
-      transaction.partialSign(...extraSigners);
+    while (retries > 0) {
+      try {
+        console.log('🔄 Getting fresh blockhash...');
+        const { blockhash, lastValidBlockHeight } = await this.connection.getLatestBlockhash('confirmed');
+        console.log(`   Using Blockhash: ${blockhash}`);
+        console.log(`   LastValidHeight: ${lastValidBlockHeight}`);
+
+        transaction.recentBlockhash = blockhash;
+        transaction.feePayer = this.wallet.publicKey;
+
+        if (extraSigners.length > 0) {
+          transaction.partialSign(...extraSigners);
+        }
+
+        console.log('✍️  Requesting wallet signature...');
+        let signed;
+        try {
+          signed = await this.wallet.signTransaction(transaction);
+        } catch (signError: any) {
+          console.error('❌ Wallet signature failed:', signError);
+          console.error('   Hint: Ensure your wallet is connected to the same network as the application.');
+          throw signError;
+        }
+
+        console.log('🚀 Sending raw transaction...');
+        const signature = await this.connection.sendRawTransaction(signed.serialize(), {
+          skipPreflight: true,
+          maxRetries: 5,
+        });
+
+        console.log(`✅ Sent transaction: ${signature}, waiting for confirmation...`);
+
+        await this.connection.confirmTransaction({
+          signature,
+          blockhash,
+          lastValidBlockHeight
+        }, 'confirmed');
+
+        return signature;
+      } catch (error: any) {
+        console.warn(`⚠️ Transaction attempt failed (retries left: ${retries - 1}):`, error.message);
+        lastError = error;
+
+        const errString = error.toString() + (error.message || '');
+        if (
+          errString.includes('Blockhash') ||
+          errString.includes('blockhash') ||
+          errString.includes('expired') ||
+          errString.includes('block height exceeded')
+        ) {
+          retries--;
+          console.log(`♻️  Retrying... (${retries} attempts left)`);
+          await new Promise(r => setTimeout(r, 2000)); // Wait 2s before retry
+          continue;
+        }
+
+        throw error; // Rethrow other errors immediately
+      }
     }
 
-    const signed = await this.wallet.signTransaction(transaction);
-    const signature = await this.connection.sendRawTransaction(signed.serialize());
-    await this.connection.confirmTransaction(signature);
-
-    return signature;
+    throw lastError;
   }
 }
 

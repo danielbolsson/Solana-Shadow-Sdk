@@ -119,7 +119,7 @@ solana program deploy target/deploy/shadow_privacy.so
 
 ### 3. Start Integrated Server (Monitoring + Relayer + Demo)
 ```bash
-cd monitoring
+cd web-dashboard
 npm install
 npx ts-node dashboard-server.ts
 ```
@@ -136,7 +136,7 @@ npx ts-node dashboard-server.ts
  ┣ 📂 programs               # Solana Smart Contracts (Rust/Anchor)
  ┃ ┗ 📂 shadow-privacy       # Main protocol logic
  ┣ 📂 privacy-integration    # TypeScript SDK & Relayer
- ┣ 📂 monitoring             # Operational Dashboard & Metrics
+ ┣ 📂 web-dashboard             # Operational Dashboard & Metrics
  ┣ 📂 ceremony-coordinator   # Trusted Setup Tools
  ┗ 📂 packages               # Shared libraries
 ```
@@ -148,8 +148,8 @@ npx ts-node dashboard-server.ts
 Detailed documentation available for each component:
 
 - **[Trusted Setup Guide](TRUSTED_SETUP.md)** - Multi-party ceremony instructions.
-- **[Production Setup](PRODUCTION_SETUP.md)** - Mainnet deployment guide.
-- **[Architecture Deep Dive](monitoring/public/explanation.html)** - Technical explanation of the protocol.
+- **[Deployment Guide](PRODUCTION_SETUP.md)** - Instructions for Local, Devnet, and Mainnet.
+- **[Architecture Deep Dive](web-dashboard/public/explanation.html)** - Technical explanation of the protocol.
 - **[Ceremony Coordinator](ceremony-coordinator/README.md)** - Guide for running the MPC ceremony.
 
 ---

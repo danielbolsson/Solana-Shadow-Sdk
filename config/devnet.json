@@ -1,8 +1,8 @@
 {
   "environment": "devnet",
   "network": {
-    "rpcUrl": "https://api.devnet.solana.com",
-    "programId": "3wiFPaYTQZZD71rd4pohPRr8JaFaGN3XaNWLoGSk31Ck",
+    "rpcUrl": "https://devnet.helius-rpc.com/?api-key=05914747-9bfa-4124-92f8-02b90d4cf595",
+    "programId": "9zDon3j8n18wFFXP5YSRPWdy4vxyvnz7gNraRt2WYd3b",
     "commitment": "confirmed"
   },
   "circuits": {
