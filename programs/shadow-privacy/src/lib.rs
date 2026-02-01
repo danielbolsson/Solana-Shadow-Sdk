@@ -29,4 +29,4 @@ pub fn process(
 solana_program::entrypoint!(process);
 
 // Re-export program ID
-solana_program::declare_id!("x6ofF4ZJFtXd7BTGV8UB6TBYkE2Vwx7WMmuQCvJKLUV");
+solana_program::declare_id!("FwQ4vNgCPM51UKJYY6dsPyZQ4jrGQNQPipQfcJiK3kjX");

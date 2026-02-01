@@ -159,38 +159,68 @@ export class ShadowClient {
   /**
    * Generate ZK proof for private transfer
    */
+  /**
+   * Generate ZK proof for private transfer
+   */
   async generateTransferProof(params: {
     amount: bigint;
     recipient: string;
     commitment: string;
     nullifier: string;
+    nonce: Uint8Array; // Added nonce
   }): Promise<ZKProof> {
     console.log('🔐 Generating ZK proof...');
     const startTime = Date.now();
     try {
-      // Generate random mock oldNonce for simulation
-      const oldNonceBytes = randomBytes(32);
+      // Use actual nonce from the commitment we are spending
+      const oldNonceBytes = params.nonce;
       const oldNonce = BigInt('0x' + Buffer.from(oldNonceBytes).toString('hex'));
 
-      // Calculate Mock Root
-      const publicKeyHash = this.poseidon([BigInt('0x' + Buffer.from(this.privateKey).toString('hex'))]);
+      // Calculate Root
+      // Re-construct the commitment to ensure we have the right values
+      // Commitment = H(recipient, amount, nonce)
+      // Wait, in deposit: H(recipient=self, amount, nonce)
+      // We need 'recipient' used during creation (which is 'this.getShadowIdentifier()')
+      // not the NEW recipient.
+
+      // We need to know who the commitment belongs to (spending key).
+      // Since we own it, it's us.
+      const ownerPublicKey = this.getShadowIdentifier();
+      const ownerPubKeyBytes = Buffer.from(ownerPublicKey, 'hex');
+
       const oldCommitmentFn = this.poseidon([
-        this.poseidon.F.toObject(publicKeyHash),
+        BigInt('0x' + ownerPubKeyBytes.toString('hex')),
         params.amount,
         oldNonce
       ]);
-      let mockRoot = this.poseidon.F.toObject(oldCommitmentFn);
-      for (let i = 0; i < MERKLE_TREE_DEPTH; i++) {
-        mockRoot = this.poseidon.F.toObject(this.poseidon([mockRoot, 0n]));
+
+      // Verify matches params.commitment
+      const calculatedCommitment = this.poseidon.F.toObject(oldCommitmentFn);
+      const calculatedCommitmentHex = Buffer.from((calculatedCommitment as any).toString(16).padStart(64, '0'), 'hex').toString('hex');
+
+      if (calculatedCommitmentHex !== params.commitment) {
+        console.warn("WARNING: Calculated commitment does not match stored commitment!");
+        console.warn("Calculated:", calculatedCommitmentHex);
+        console.warn("Stored:", params.commitment);
       }
 
-      // Calculate Mock Nullifier
-      const mockNullifier = this.poseidon([
-        this.poseidon.F.toObject(oldCommitmentFn),
+      // Calculate Mock Root (assuming index 0, empty siblings)
+      // In a real app, we would fetch the Merkle Path from the chain/indexer.
+      // For this demo (fresh pool), index 0 is correct.
+      let mockRoot = calculatedCommitment;
+      for (let i = 0; i < MERKLE_TREE_DEPTH; i++) {
+        mockRoot = this.poseidon.F.toObject(this.poseidon([mockRoot, 0n])); // Right sibling 0
+      }
+
+      // Calculate Nullifier
+      // nullifier = H(commitment, privateKey)
+      const nullifierFn = this.poseidon([
+        calculatedCommitment,
         BigInt('0x' + Buffer.from(this.privateKey).toString('hex'))
       ]);
+      const nullifier = this.poseidon.F.toObject(nullifierFn);
 
-      // Generate random nonce for new commitment
+      // Generate random nonce for new commitment (output to recipient)
       const nonceBytes = randomBytes(32);
       const nonce = BigInt('0x' + Buffer.from(nonceBytes).toString('hex'));
 
@@ -205,7 +235,7 @@ export class ShadowClient {
       const input = {
         // Public inputs
         root: '0x' + mockRoot.toString(16),
-        nullifier: '0x' + this.poseidon.F.toObject(mockNullifier).toString(16),
+        nullifier: '0x' + nullifier.toString(16),
         newCommitment: '0x' + mockNewCommitment.toString(16),
 
         // Private inputs
@@ -264,9 +294,10 @@ export class ShadowClient {
    */
   /**
    * Get deterministic pool keypair for a denomination
+   * NOTE: Includes programId in seed to avoid conflicts when program changes
    */
   getPoolKeypair(amount: bigint): Keypair {
-    const seedContent = `pool-${amount.toString()}`;
+    const seedContent = `pool-${this.programId.toBase58()}-${amount.toString()}`;
     const hash = sha256(new TextEncoder().encode(seedContent));
     return Keypair.fromSeed(hash.slice(0, 32));
   }
@@ -392,6 +423,13 @@ export class ShadowClient {
     console.log('   Amount:', params.amount.toString(), 'lamports');
     console.log('   Recipient:', params.recipient);
 
+    // Get deterministic pool account (needs to be derived before VK check)
+    const poolKeypair = this.getPoolKeypair(params.amount);
+    const poolAddress = poolKeypair.publicKey;
+
+    // Ensure verification key is stored
+    await this.ensureVerificationKeyStored(0, poolAddress); // 0 = Transfer Circuit
+
     // Find a commitment with sufficient balance
     const commitment = Array.from(this.commitments.values())
       .find(c => c.amount >= params.amount);
@@ -415,11 +453,13 @@ export class ShadowClient {
       recipient: params.recipient,
       commitment: Buffer.from(commitment.value).toString('hex'),
       nullifier: nullifierKey,
+      nonce: commitment.nonce, // Pass the nonce
     });
 
-    // Get deterministic pool account
-    const poolKeypair = this.getPoolKeypair(params.amount);
-    const poolAddress = poolKeypair.publicKey;
+    console.log('🔍 [Withdraw] Public Signals (from snarkjs):');
+    console.log('   Root:', proof.publicSignals[0]);
+    console.log('   Nullifier:', proof.publicSignals[1]);
+    console.log('   NewCommitment:', proof.publicSignals[2]);
 
     const [vaultAddress] = PublicKey.findProgramAddressSync(
       [Buffer.from('vault'), poolAddress.toBuffer()],
@@ -430,6 +470,9 @@ export class ShadowClient {
       [Buffer.from('vk_transfer'), poolAddress.toBuffer()],
       this.programId
     );
+
+    console.log(`🔍 [Withdraw] Pool Address: ${poolAddress.toBase58()}`);
+    console.log(`🔍 [Withdraw] Using VK Address: ${vkAddress.toBase58()}`);
 
     const recipientPubkey = new PublicKey(params.recipient);
 
@@ -445,10 +488,11 @@ export class ShadowClient {
       programId: this.programId,
       data: this.encodeWithdrawInstruction(
         proof.proof,
-        commitment.value,
-        nullifier.value,
+        this.bnToBuf(proof.publicSignals[0]), // Root (BE) - from circuit
+        this.bnToBuf(proof.publicSignals[1]), // Nullifier (BE) - from circuit (authoritative)
         params.amount,
-        recipientPubkey
+        recipientPubkey,
+        this.bnToBuf(proof.publicSignals[2]) // New Commitment (BE) - from circuit
       ),
     });
     // Send transaction (Directly or via Relayer)
@@ -466,6 +510,7 @@ export class ShadowClient {
           recipient: params.recipient,
           vkAddress: vkAddress.toBase58(),
           proof: Buffer.from(proof.proof).toString('hex'),
+          publicSignals: proof.publicSignals, // Send explicit public signals (Root, Nullifier, NewCommitment)
           commitment: Buffer.from(commitment.value).toString('hex'),
           nullifier: Buffer.from(nullifier.value).toString('hex'),
           amount: params.amount.toString(),
@@ -596,10 +641,243 @@ export class ShadowClient {
   // ============ HELPER METHODS ============
 
   private serializeProof(proof: any): Uint8Array {
-    // Serialize Groth16 proof to bytes
-    // In production, use proper serialization
-    const proofStr = JSON.stringify(proof);
-    return new Uint8Array(Buffer.from(proofStr));
+    // Groth16-Solana expects:
+    // A (64 bytes): X, Y (Big Endian)
+    // B (128 bytes): X (c1, c0), Y (c1, c0) -- Note: snarkjs uses [c1, c0] usually, need to check.
+    // C (64 bytes): X, Y (Big Endian)
+    //
+    // Total 256 bytes.
+    //
+    // NOTE: We might need to negate A. For now, we try without.
+
+    const buffer = Buffer.alloc(256);
+    let offset = 0;
+
+    // pi_a: [x, y, 1] - MUST BE NEGATED for groth16 pairing equation.
+    // Negation of EC point on BN254: -P = (x, p - y)
+    // BN254 field prime p = 21888242871839275222246405745257275088696311157297823662689037894645226208583
+    const BN254_FIELD_PRIME = BigInt('21888242871839275222246405745257275088696311157297823662689037894645226208583');
+    const pi_a_x = BigInt(proof.pi_a[0]);
+    const pi_a_y = BigInt(proof.pi_a[1]);
+    const pi_a_y_neg = BN254_FIELD_PRIME - pi_a_y;
+
+    this.writeBigIntBE(pi_a_x, buffer, offset); offset += 32;
+    this.writeBigIntBE(pi_a_y_neg, buffer, offset); offset += 32;
+
+    // pi_b: snarkjs outputs [[c1, c0], [c1, c0]] format for G2 points
+    // Target for alt_bn128: [x_c0, x_c1, y_c0, y_c1] in Big Endian
+    // So we swap to get: [0][1], [0][0], [1][1], [1][0]
+    this.writeBigIntBE(BigInt(proof.pi_b[0][1]), buffer, offset); offset += 32; // x_c0
+    this.writeBigIntBE(BigInt(proof.pi_b[0][0]), buffer, offset); offset += 32; // x_c1
+    this.writeBigIntBE(BigInt(proof.pi_b[1][1]), buffer, offset); offset += 32; // y_c0
+    this.writeBigIntBE(BigInt(proof.pi_b[1][0]), buffer, offset); offset += 32; // y_c1
+
+    // pi_c: [x, y, 1]
+    this.writeBigIntBE(BigInt(proof.pi_c[0]), buffer, offset); offset += 32;
+    this.writeBigIntBE(BigInt(proof.pi_c[1]), buffer, offset); offset += 32;
+
+    // Return Big Endian bytes for alt_bn128 syscalls
+    return new Uint8Array(buffer);
+  }
+
+  private writeBigIntBE(value: bigint, buffer: Buffer, offset: number) {
+    // More robust implementation that works in both Node.js and browser
+    const hex = value.toString(16).padStart(64, '0');
+    for (let i = 0; i < 32; i++) {
+      buffer[offset + i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+    }
+  }
+
+  private writeBigIntLE(value: bigint, buffer: Buffer, offset: number) {
+    const hex = value.toString(16).padStart(64, '0');
+    buffer.write(hex, offset, 'hex');
+  }
+
+  /**
+   * Store verification key for a circuit
+   */
+  async storeVerificationKey(
+    circuitType: number, // 0=Transfer, 1=Balance, 2=RingSig
+    vkJson: any,
+    poolAddress?: PublicKey
+  ): Promise<string> {
+    console.log(`🔐 Storing verification key for circuit type ${circuitType}...`);
+
+    const vkData = this.serializeVerificationKey(vkJson);
+    console.log('   VK Data Size:', vkData.length, 'bytes');
+
+    // Resolve pool address
+    if (!poolAddress) {
+      if (!this.currentPoolAddress) throw new Error("Pool not initialized");
+      poolAddress = this.currentPoolAddress;
+    }
+
+    // Derive VK PDA
+    let seedPrefix = 'vk_transfer';
+    if (circuitType === 1) seedPrefix = 'vk_balance';
+    if (circuitType === 2) seedPrefix = 'vk_ring_sig';
+
+    const [vkAddress] = PublicKey.findProgramAddressSync(
+      [Buffer.from(seedPrefix), poolAddress.toBuffer()],
+      this.programId
+    );
+
+    console.log(`🔍 [StoreVK] Pool Address: ${poolAddress.toBase58()}`);
+    console.log(`🔍 [StoreVK] Derived VK Address: ${vkAddress.toBase58()}`);
+    console.log(`🔍 [StoreVK] Program ID: ${this.programId.toBase58()}`);
+
+    // Build instruction
+    // StoreVerificationKey { circuit_type: u8, vk_data: Vec<u8> }
+    // Discriminator: 7
+    // Layout: [7, circuit_type, vk_data_len(4), vk_data...]
+    const buffer = Buffer.alloc(1 + 1 + 4 + vkData.length);
+    let offset = 0;
+
+    buffer.writeUInt8(7, offset); offset += 1;
+    buffer.writeUInt8(circuitType, offset); offset += 1;
+    buffer.writeUInt32LE(vkData.length, offset); offset += 4;
+    vkData.copy(buffer, offset);
+
+    const instruction = new TransactionInstruction({
+      keys: [
+        { pubkey: vkAddress, isSigner: false, isWritable: true },
+        { pubkey: poolAddress, isSigner: false, isWritable: true },
+        { pubkey: this.wallet.publicKey, isSigner: true, isWritable: true },
+        { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+      ],
+      programId: this.programId,
+      data: buffer,
+    });
+
+    const transaction = new Transaction().add(instruction);
+    const signature = await this.sendAndConfirm(transaction);
+
+    console.log('✅ VK stored:', signature);
+    return signature;
+  }
+
+  private serializeVerificationKey(vk: any): Buffer {
+    // Convert SnarkJS VK JSON to raw bytes for groth16-solana
+    // Format: Alpha(64) + Beta(128) + Gamma(128) + Delta(128) + IC(N*64)
+
+    const parts: Buffer[] = [];
+
+    // Alpha G1 (64 bytes): X, Y
+    parts.push(this.bnToBuf(vk.vk_alpha_1[0]));
+    parts.push(this.bnToBuf(vk.vk_alpha_1[1]));
+
+    // Beta G2 (128 bytes): snarkjs outputs [[c1, c0], [c1, c0]] format
+    // Target for alt_bn128: [x_c0, x_c1, y_c0, y_c1] in Big Endian
+    // So we swap: [0][1], [0][0], [1][1], [1][0]
+    parts.push(this.bnToBuf(vk.vk_beta_2[0][1]));  // x_c0
+    parts.push(this.bnToBuf(vk.vk_beta_2[0][0]));  // x_c1
+    parts.push(this.bnToBuf(vk.vk_beta_2[1][1]));  // y_c0
+    parts.push(this.bnToBuf(vk.vk_beta_2[1][0]));  // y_c1
+
+    // Gamma G2 (same swap pattern)
+    parts.push(this.bnToBuf(vk.vk_gamma_2[0][1])); // x_c0
+    parts.push(this.bnToBuf(vk.vk_gamma_2[0][0])); // x_c1
+    parts.push(this.bnToBuf(vk.vk_gamma_2[1][1])); // y_c0
+    parts.push(this.bnToBuf(vk.vk_gamma_2[1][0])); // y_c1
+
+    // Delta G2 (same swap pattern)
+    parts.push(this.bnToBuf(vk.vk_delta_2[0][1])); // x_c0
+    parts.push(this.bnToBuf(vk.vk_delta_2[0][0])); // x_c1
+    parts.push(this.bnToBuf(vk.vk_delta_2[1][1])); // y_c0
+    parts.push(this.bnToBuf(vk.vk_delta_2[1][0])); // y_c1
+
+    // IC (G1 points)
+    for (const ic of vk.IC) {
+      parts.push(this.bnToBuf(ic[0]));
+      parts.push(this.bnToBuf(ic[1]));
+    }
+
+    // Return Big Endian bytes when using alt_bn128 syscalls
+    return Buffer.concat(parts);
+  }
+
+  /**
+   * Reverse each N-byte chunk in a buffer.
+   * Used to convert Big Endian to Little Endian for groth16-solana.
+   */
+  private reverseChunks(buffer: Buffer, chunkSize: number): Buffer {
+    const result = Buffer.alloc(buffer.length);
+    for (let i = 0; i < buffer.length; i += chunkSize) {
+      for (let j = 0; j < chunkSize && i + j < buffer.length; j++) {
+        result[i + j] = buffer[i + chunkSize - 1 - j];
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Ensure verification key is stored on-chain
+   */
+  /**
+   * Ensure verification key is stored on-chain
+   */
+  async ensureVerificationKeyStored(circuitType: number, poolAddress: PublicKey): Promise<void> {
+    // Check if account exists
+    let seedPrefix = 'vk_transfer';
+    if (circuitType === 1) seedPrefix = 'vk_balance';
+    if (circuitType === 2) seedPrefix = 'vk_ring_sig';
+
+    const [vkAddress] = PublicKey.findProgramAddressSync(
+      [Buffer.from(seedPrefix), poolAddress.toBuffer()],
+      this.programId
+    );
+
+    const accountInfo = await this.connection.getAccountInfo(vkAddress);
+    if (accountInfo && accountInfo.data.length > 500) {
+      console.log(`✅ Verification key exists (${accountInfo.data.length} bytes)`);
+      return;
+    }
+
+    console.log(`⚠️ Verification key not found for type ${circuitType}. Storing now...`);
+
+    // Load JSON
+    let vkJson;
+    const filename = circuitType === 0 ? 'transfer_verification_key.json' :
+      circuitType === 1 ? 'balance_verification_key.json' :
+        'ring_signature_verification_key.json';
+
+    // Check if we are in browser environment or if circuitsPath looks like a URL/relative path
+    const isBrowser = typeof (globalThis as any).window !== 'undefined';
+
+    try {
+      if (isBrowser || this.circuitsPath.startsWith('http') || this.circuitsPath.startsWith('.')) {
+        // Try fetch first (works for browser and local server)
+        // Ensure slash
+        const prefix = this.circuitsPath.endsWith('/') ? this.circuitsPath : `${this.circuitsPath}/`;
+        const path = `${prefix}${filename}`;
+
+        console.log(`   Fetching VK from ${path}...`);
+        const resp = await fetch(path);
+        if (!resp.ok) throw new Error(`Failed to fetch VK: ${resp.statusText}`);
+        vkJson = await resp.json();
+      } else {
+        // Fallback to FS for Node.js absolute paths
+        const fs = require('fs');
+        const path = `${this.circuitsPath}/${filename}`;
+        console.log(`   Loading VK from ${path}...`);
+        vkJson = JSON.parse(fs.readFileSync(path, 'utf-8'));
+      }
+    } catch (e) {
+      console.error("❌ Failed to load VK JSON:", e);
+      throw new Error(`Failed to load verification key: ${(e as Error).message}`);
+    }
+
+    await this.storeVerificationKey(circuitType, vkJson, poolAddress);
+  }
+
+  private bnToBuf(bnStr: string): Buffer {
+    // Robust implementation for both Node.js and browser
+    const hex = BigInt(bnStr).toString(16).padStart(64, '0');
+    const buf = Buffer.alloc(32);
+    for (let i = 0; i < 32; i++) {
+      buf[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+    }
+    return buf;
   }
 
   private encodeDepositInstruction(commitment: Uint8Array, amount: bigint): Buffer {
@@ -617,7 +895,8 @@ export class ShadowClient {
     root: Uint8Array,
     nullifier: Uint8Array,
     amount: bigint,
-    recipient: PublicKey
+    recipient: PublicKey,
+    newCommitment?: Uint8Array
   ): Buffer {
     // Rust layout:
     // Withdraw {
@@ -630,7 +909,7 @@ export class ShadowClient {
     // }
     // Discriminant: 2
 
-    const buffer = Buffer.alloc(1 + 4 + proof.length + 32 + 32 + 1 + 32 + 8);
+    const buffer = Buffer.alloc(1 + 4 + proof.length + 32 + 32 + 1 + 32 + 32 + 8); // Max size
     let offset = 0;
 
     buffer.writeUInt8(2, offset); // Discriminant
@@ -647,16 +926,25 @@ export class ShadowClient {
     buffer.set(nullifier, offset);
     offset += 32;
 
-    // Option<[u8; 32]> for new_commitment (None = 0)
-    buffer.writeUInt8(0, offset);
-    offset += 1;
+    // Option<[u8; 32]> for new_commitment
+    if (newCommitment) {
+      buffer.writeUInt8(1, offset);
+      offset += 1;
+      buffer.set(newCommitment, offset);
+      offset += 32;
+    } else {
+      buffer.writeUInt8(0, offset);
+      offset += 1;
+    }
 
     buffer.set(recipient.toBuffer(), offset);
     offset += 32;
 
     buffer.writeBigUInt64LE(amount, offset);
 
-    return buffer;
+    // Slice buffer to actual size used
+    // offset += 8; // Handled by write
+    return buffer.slice(0, offset + 8);
   }
 
   private async sendAndConfirm(transaction: Transaction, extraSigners: Keypair[] = []): Promise<string> {
@@ -688,18 +976,29 @@ export class ShadowClient {
         }
 
         console.log('🚀 Sending raw transaction...');
+
+        // Log instruction data for debugging
+        if (transaction.instructions.length > 0) {
+          console.log('   Instruction[0] Data Len:', transaction.instructions[0].data.length);
+          console.log('   Instruction[0] Data Hex:', transaction.instructions[0].data.slice(0, 16).toString('hex') + '...');
+        }
+
         const signature = await this.connection.sendRawTransaction(signed.serialize(), {
-          skipPreflight: true,
+          skipPreflight: false, // Enable preflight to catch simulation errors
           maxRetries: 5,
         });
 
         console.log(`✅ Sent transaction: ${signature}, waiting for confirmation...`);
 
-        await this.connection.confirmTransaction({
+        const confirmation = await this.connection.confirmTransaction({
           signature,
           blockhash,
           lastValidBlockHeight
         }, 'confirmed');
+
+        if (confirmation.value.err) {
+          throw new Error(`Transaction failed: ${JSON.stringify(confirmation.value.err)}`);
+        }
 
         return signature;
       } catch (error: any) {

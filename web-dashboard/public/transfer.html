@@ -248,14 +248,17 @@
     </style>
 </head>
 
+<script src="js/nav.js"></script>
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+        renderNavigation('demo');
+    });
+</script>
+</head>
+
 <body>
     <div class="container">
-        <a href="/" class="back-link">← Back to Dashboard</a>
-
-        <header>
-            <h1>Shadow Transfer</h1>
-            <p class="subtitle">Private, traceable SOL transfers with zero on-chain fingerprints</p>
-        </header>
+        <!-- Header replaced by nav.js -->
 
         <!-- Wallet Connection -->
         <div class="card wallet-section">
@@ -370,7 +373,7 @@
                     shadowClient = new ShadowSDK.ShadowClient({
                         connection: connection,
                         wallet: wallet,
-                        programId: new solanaWeb3.PublicKey('9zDon3j8n18wFFXP5YSRPWdy4vxyvnz7gNraRt2WYd3b'), // Devnet Program ID
+                        programId: new solanaWeb3.PublicKey('FwQ4vNgCPM51UKJYY6dsPyZQ4jrGQNQPipQfcJiK3kjX'), // Demo Program ID
                         circuitsPath: '/circuits', // Path to served circuit files
                         relayerUrl: window.location.origin // Relayer enabled
                     });

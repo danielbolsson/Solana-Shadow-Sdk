@@ -2,7 +2,7 @@
   "environment": "devnet",
   "network": {
     "rpcUrl": "https://devnet.helius-rpc.com/?api-key=05914747-9bfa-4124-92f8-02b90d4cf595",
-    "programId": "9zDon3j8n18wFFXP5YSRPWdy4vxyvnz7gNraRt2WYd3b",
+    "programId": "FwQ4vNgCPM51UKJYY6dsPyZQ4jrGQNQPipQfcJiK3kjX",
     "commitment": "confirmed"
   },
   "circuits": {

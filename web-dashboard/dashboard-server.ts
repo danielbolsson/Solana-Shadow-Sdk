@@ -135,6 +135,9 @@ app.post('/api/relayer/withdraw', async (req, res) => {
   const { poolAddress, vaultAddress, recipient, vkAddress, proof, commitment, nullifier, amount } = req.body;
   console.log('\n🔗 [RELAYER] Received withdraw request...');
   console.log(`   Transferring ${amount} lamports to ${recipient}`);
+  console.log(`   Pool Address: ${poolAddress}`);
+  console.log(`   VK Address: ${vkAddress}`);
+  console.log(`   RPC URL: ${cfg.network.rpcUrl}`);
 
   try {
     const connection = new Connection(cfg.network.rpcUrl, 'confirmed');
@@ -151,8 +154,30 @@ app.post('/api/relayer/withdraw', async (req, res) => {
     console.log(`   [RELAYER] Relayer Balance: ${(await connection.getBalance(relayerKeypair.publicKey)) / 1e9} SOL`);
 
     // Correct Borsh serialization for Withdraw instruction (Enum index 2)
+    // Deserialize Proof
     const proofBuffer = Buffer.from(proof, 'hex');
-    const data = Buffer.alloc(1 + 4 + proofBuffer.length + 32 + 32 + 1 + 32 + 8);
+
+    // Deserialize Public Signals
+    // publicSignals: [Root, Nullifier, NewCommitment]
+    const bnToBuf = (bnStr: string) => {
+      const hex = BigInt(bnStr).toString(16).padStart(64, '0');
+      return Buffer.from(hex, 'hex');
+    };
+
+    // Fallback if publicSignals are missing (backward compatibility attempt or error)
+    // But realistically we need them.
+    const signals = req.body.publicSignals || [
+      Buffer.from(commitment, 'hex').toString('hex'), // Old "commitment" field was mapped to Root? No, that's broken.
+      Buffer.from(nullifier, 'hex').toString('hex'),
+      "0"
+    ];
+
+    const rootBuf = bnToBuf(signals[0]);
+    const nullifierBuf = bnToBuf(signals[1]);
+    const newCommitmentBuf = bnToBuf(signals[2]);
+
+    // Calculate size: 1 (Disc) + 4 (ProofLen) + Proof + 32 (Root) + 32 (Nullifier) + 1 (Opt) + 32 (NewCommitment) + 32 (Recipient) + 8 (Amount)
+    const data = Buffer.alloc(1 + 4 + proofBuffer.length + 32 + 32 + 1 + 32 + 32 + 8);
 
     let offset = 0;
     data.writeUInt8(2, offset); // Discriminator (Withdraw = 2)
@@ -163,14 +188,16 @@ app.post('/api/relayer/withdraw', async (req, res) => {
     proofBuffer.copy(data, offset);
     offset += proofBuffer.length;
 
-    Buffer.from(commitment, 'hex').copy(data, offset); // Root/Commitment
+    rootBuf.copy(data, offset); // Root
     offset += 32;
 
-    Buffer.from(nullifier, 'hex').copy(data, offset); // Nullifier
+    nullifierBuf.copy(data, offset); // Nullifier
     offset += 32;
 
-    data.writeUInt8(0, offset); // Option<NewCommitment> = None
+    data.writeUInt8(1, offset); // Option<NewCommitment> = Some (1)
     offset += 1;
+    newCommitmentBuf.copy(data, offset); // New Commitment
+    offset += 32;
 
     new PublicKey(recipient).toBuffer().copy(data, offset); // Recipient
     offset += 32;

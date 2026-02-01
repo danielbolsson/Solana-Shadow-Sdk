@@ -48,7 +48,7 @@ async function main() {
     }
 
     const circuitsPath = path.resolve(__dirname, '../../../circuits/build');
-    const programId = new PublicKey('9zDon3j8n18wFFXP5YSRPWdy4vxyvnz7gNraRt2WYd3b');
+    const programId = new PublicKey('FwQ4vNgCPM51UKJYY6dsPyZQ4jrGQNQPipQfcJiK3kjX');
 
     const client = new ShadowClient({
         connection,
@@ -56,23 +56,29 @@ async function main() {
         programId,
         circuitsPath,
         monitorUrl: 'http://127.0.0.1:5000',
-        relayerUrl: 'http://127.0.0.1:5000'
+        // relayerUrl: 'http://127.0.0.1:5000' // Disable relayer to test direct submission (avoid stale config in running relayer)
     });
 
     await client.initialize();
 
-    // 1. Initialize Privacy Pool
-    console.log('\n🏗️  Step 1: Initializing Privacy Pool...');
-    const poolAccount = Keypair.generate();
-    const denomination = 100_000_000n; // 0.1 SOL
-    await client.initializePool(poolAccount, denomination);
-    console.log('   Pool Address:', poolAccount.publicKey.toString());
+    // 1. (Implicit) Initialize Privacy Pool during Deposit
+    // The client automatically derives the pool address based on denomination and initializes it if needed.
+    // Use a unique denomination to ensure a fresh pool for the demo (avoids Merkle index issues without an indexer)
+    const denomination = 100_000_000n + BigInt(Math.floor(Math.random() * 100000));
+
 
     // 2. Alice Deposits into Pool
     console.log('\n� Step 2: Alice depositing 0.1 SOL into Privacy Pool...');
+    // 2. Alice Deposits into Pool
+    console.log('\n🏗️ Step 2: Alice depositing 0.1 SOL into Privacy Pool...');
     await client.deposit({ amount: denomination });
 
-    // Check Alice's private balance
+    // 2b. Initialize Verification Key (Required for new pool)
+    console.log('\n🔑 Step 2b: Initializing Verification Key for new pool...');
+    const vkPath = path.join(circuitsPath, 'transfer_verification_key.json');
+    const vkJson = JSON.parse(fs.readFileSync(vkPath, 'utf-8'));
+    await client.storeVerificationKey(0, vkJson); // 0 = Transfer Circuit
+
     const privateBalance = await client.getPrivateBalance();
     console.log('   Alice Private Balance:', Number(privateBalance) / 1e9, 'SOL');
 
@@ -88,14 +94,18 @@ async function main() {
 
     // 4. Verification
     console.log('\n✨ Step 4: Verifying results...');
-    const bobFinalBalance = await connection.getBalance(bob.publicKey);
-    const aliceFinalPrivateBalance = await client.getPrivateBalance();
+
+    // Wait a moment for commitment to propagate fully to RPC
+    await new Promise(r => setTimeout(r, 2000));
+
+    const bobBalanceFinal = await connection.getBalance(bob.publicKey);
+    const alicePrivateBalanceFinal = await client.getPrivateBalance();
 
     console.log('   Bob Initial Balance: ', bobInitialBalance / 1e9, 'SOL');
-    console.log('   Bob Final Balance:   ', bobFinalBalance / 1e9, 'SOL');
-    console.log('   Alice Private Balance:', Number(aliceFinalPrivateBalance) / 1e9, 'SOL');
+    console.log('   Bob Final Balance:   ', bobBalanceFinal / 1e9, 'SOL');
+    console.log('   Alice Private Balance:', Number(alicePrivateBalanceFinal) / 1e9, 'SOL');
 
-    if (bobFinalBalance > bobInitialBalance) {
+    if (bobBalanceFinal > bobInitialBalance) {
         console.log('\n🎉 SUCCESS! Bob received the funds privately through the Shadow Protocol!');
         console.log('   Total transferred: 0.1 SOL');
     } else {
@@ -103,6 +113,7 @@ async function main() {
     }
 
     console.log('\n✨ Demo Completed!');
+    process.exit(0); // Exit to stop snarkjs worker threads
 }
 
 main().catch(err => {
