@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow SDK Documentation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        :root {
+            --bg-dark: #09090b;
+            --card-bg: #18181b;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --accent-emerald: #10b981;
+            --accent-cyan: #06b6d4;
+            --text-main: #fafafa;
+            --text-muted: #a1a1aa;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .doc-section {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 32px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 24px;
+            background: linear-gradient(90deg, #fafafa, #a1a1aa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            margin: 32px 0 16px;
+            color: var(--accent-emerald);
+        }
+
+        h3 {
+            font-size: 1.2rem;
+            margin: 24px 0 12px;
+            font-family: 'JetBrains Mono', monospace;
+            display: flex;
+            align-items: center;
+        }
+
+        .method-signature {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-emerald);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: #d4d4d8;
+        }
+
+        code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+            color: #e4e4e7;
+        }
+
+        pre {
+            background: #000;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        pre code {
+            background: transparent;
+            padding: 0;
+            color: #a1a1aa;
+        }
+
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .param-table th,
+        .param-table td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .param-table th {
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        .install-box {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .install-cmd {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px 24px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 12px;
+            color: var(--accent-cyan);
+        }
+    </style>
+    <script src="js/nav.js"></script>
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            renderNavigation('docs');
+        });
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Shadow SDK Documentation</h1>
+        <p class="subtitle" style="font-size: 1.2rem; color: var(--text-muted); margin-bottom: 40px;">
+            The complete reference for integrating private Solana transactions into your application.
+        </p>
+
+        <div class="install-box">
+            <h3>Installation</h3>
+            <div class="install-cmd">npm install @shadow-sdk/core</div>
+        </div>
+
+        <div class="doc-section">
+            <h2>Initialization</h2>
+            <p>The entry point for the SDK. Configures the connection to Solana and the Shadow Privacy Program.</p>
+
+            <h3>constructor(config)</h3>
+            <pre><code>const client = new ShadowClient({
+  connection: new solanaWeb3.Connection('https://api.devnet.solana.com'),
+  wallet: window.solana,
+  programId: new PublicKey('...'),
+  circuitsPath: '/circuits'
+});</code></pre>
+
+            <table class="param-table">
+                <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>connection</td>
+                        <td>Connection</td>
+                        <td>Solana web3.js Connection object</td>
+                    </tr>
+                    <tr>
+                        <td>wallet</td>
+                        <td>WalletAdapter</td>
+                        <td>Standard Solana wallet adapter (Phantom, Solflare, etc.)</td>
+                    </tr>
+                    <tr>
+                        <td>relayerUrl</td>
+                        <td>string</td>
+                        <td>Optional. URL of the Relayer service for gasless transactions</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>async initialize()</h3>
+            <p>Initializes the cryptographic primitives (Poseidon hash) and derives the user's Shadow Identity.</p>
+            <pre><code>await client.initialize();
+console.log('My Shadow ID:', client.getShadowIdentifier());</code></pre>
+        </div>
+
+        <div class="doc-section">
+            <h2>Core Operations</h2>
+
+            <h3>async deposit(params)</h3>
+            <p>Shields Assets. Converts public SOL into a private commitment in the Shadow Pool.</p>
+            <pre><code>const txSignature = await client.deposit({
+  amount: 1000000000n // 1 SOL (in lamports)
+});</code></pre>
+
+            <h3>async withdraw(params)</h3>
+            <p>Unshields Assets. Generates a ZK-Proof to withdraw funds to a public address without revealing the source
+                deposit.</p>
+            <pre><code>const txSignature = await client.withdraw({
+  amount: 1000000000n,
+  recipient: 'DestinAtionAddreSS...'
+});</code></pre>
+
+            <h3>async privateTransfer(params)</h3>
+            <p>Sends funds privately to another user within the pool (Internal Transfer).</p>
+            <pre><code>const txSignature = await client.privateTransfer({
+  amount: 500000000n, // 0.5 SOL
+  recipient: 'RecipientShadowID...'
+});</code></pre>
+        </div>
+
+        <div class="doc-section">
+            <h2>Utilities</h2>
+
+            <h3>getShadowIdentifier()</h3>
+            <span class="method-signature">Returns: string (Hex)</span>
+            <p style="margin-top: 12px;">Returns the user's current Shadow Public Key derived from their wallet
+                signature.</p>
+
+            <h3>async getPrivateBalance()</h3>
+            <span class="method-signature">Returns: Promise&lt;bigint&gt;</span>
+            <p style="margin-top: 12px;">Calculates the sum of all unspent commitments owned by the user.</p>
+        </div>
+    </div>
+</body>
+
+</html>

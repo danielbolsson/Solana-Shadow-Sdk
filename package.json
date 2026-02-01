@@ -19,8 +19,8 @@
     "clean": "turbo run clean && rm -rf node_modules",
     "circuits:build": "cd circuits && ./build.sh",
     "circuits:test": "cd circuits && npm test",
-    "program:build": "cd programs/shadow-privacy && cargo build-bpf",
-    "program:test": "cd programs/shadow-privacy && cargo test-bpf",
+    "program:build": "cd programs/shadow-privacy && cargo build-sbf",
+    "program:test": "cd programs/shadow-privacy && cargo test-sbf",
     "program:deploy": "cd programs/shadow-privacy && solana program deploy target/deploy/shadow_privacy.so"
   },
   "devDependencies": {

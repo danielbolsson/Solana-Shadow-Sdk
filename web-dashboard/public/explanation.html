@@ -174,11 +174,19 @@
     </style>
 </head>
 
+<script src="js/nav.js"></script>
+<script>
+    window.addEventListener('DOMContentLoaded', () => {
+        renderNavigation('explanation');
+    });
+</script>
+</head>
+
 <body>
-    <a href="/" class="nav-back">← Back to Dashboard</a>
+    <!-- Nav injected by js -->
 
     <div class="container">
-        <header>
+        <header style="text-align: center; margin-bottom: 60px;">
             <h1>Transfer Flow Deep Dive</h1>
             <p class="subtitle">How Alice sends 0.1 SOL to Bob with zero on-chain fingerprints.</p>
         </header>
