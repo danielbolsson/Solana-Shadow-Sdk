@@ -280,20 +280,22 @@
 
         <section id="transparency">
             <h2>Technical Transparency</h2>
-            <div class="card" style="border-left: 4px solid #f59e0b; background: rgba(245, 158, 11, 0.05);">
-                <p><strong>Note on Demo Verification:</strong> In this Alpha version, on-chain ZK verification is logged
-                    as "Skipped" in the program logs. This is a deliberate design choice for the demo environment:</p>
+            <div class="card" style="border-left: 4px solid #10b981; background: rgba(16, 185, 129, 0.05);">
+                <p><strong>On-Chain Verification: ACTIVE</strong></p>
+                <p>In this version, <strong>zero-knowledge proofs are strictly verified on-chain</strong> using Solana's
+                    optimized <code>alt_bn128</code> syscalls. The program enforces:</p>
                 <ul>
-                    <li><strong>Compute Limits</strong>: Software-based Groth16 verification is extremely heavy (2M+
-                        Compute Units). To ensure the demo runs on local validators without requiring specialized
-                        <code>alt_bn128</code> hardware acceleration setup, we simulate the 'Success' state by default.
-                    </li>
-                    <li><strong>Enabling Real Checks</strong>: You can now enable strict verification by rebuilding the
-                        program with the <code>real-zk-verification</code> feature flag:
-                        <br><code>cargo build-sbf --features real-zk-verification</code>
-                    </li>
-                    <li><strong>Production Path</strong>: In a mainnet environment, we utilize Solana's specialized ZK
-                        syscalls to achieve sub-10ms verification times within the standard 200k CU budget.</li>
+                    <li><strong>Groth16 Verification</strong>: Cryptographic proof that the spender owns a commitment in
+                        the
+                        Merkle Tree.</li>
+                    <li><strong>Merkle Root Integrity</strong>: The client calculates the new Merkle Root (Poseidon
+                        hash)
+                        which is verified against the on-chain state.</li>
+                    <li><strong>Nullifier Checks</strong>: Prevents double-spending by tracking used nullifiers in a
+                        bitmap.</li>
+                    <li><strong>Performance</strong>: Verification consumes approximately 200k Compute Units, allowing
+                        it to
+                        run within standard transaction limits.</li>
                 </ul>
             </div>
         </section>

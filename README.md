@@ -87,7 +87,7 @@ sequenceDiagram
 |-----------|--------|------------------------|
 | **ZK Circuits** | ✅ Production | `transfer.circom` (Poseidon hash), `balance.circom` |
 | **On-Chain Logic** | ✅ Production | `shadow-privacy` program with `ark-groth16` |
-| **Verification** | ✅ Validated | Strictly enforces proofs via `real-zk-verification` flag |
+| **Verification** | ✅ Validated | Strictly enforces proofs (Enabled by default via `real-zk-verification`) |
 | **Relayer** | ✅ Active | Secure relayer service preventing metadata leakage |
 | **Audit** | ❌ Pending | TBD |
 
