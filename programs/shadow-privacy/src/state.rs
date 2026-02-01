@@ -142,21 +142,9 @@ impl PoolState {
     /// 1. Maintain local Merkle tree with Poseidon hashing
     /// 2. Generate proofs using the local tree
     /// 3. Submit proofs that reference the on-chain root
-    pub fn add_commitment(&mut self, commitment: [u8; 32]) {
+    pub fn add_commitment(&mut self, commitment: [u8; 32], new_root: [u8; 32]) {
         self.commitment_count += 1;
-
-        // Note: The merkle_root is NOT updated here. Instead, it should be updated
-        // by a privileged authority (relayer or DAO) after batching commitments off-chain.
-        // This prevents MEV attacks and ensures atomic batch updates.
-        //
-        // For development/testing, you can update it here:
-        // (In production, remove this and use a separate UpdateRoot instruction)
-        use solana_program::keccak;
-        let mut hasher_input = Vec::new();
-        hasher_input.extend_from_slice(&self.merkle_root);
-        hasher_input.extend_from_slice(&commitment);
-        let new_hash = keccak::hash(&hasher_input);
-        self.merkle_root.copy_from_slice(&new_hash.to_bytes());
+        self.merkle_root = new_root;
     }
 
     /// Update Merkle root (called by relayer after off-chain tree update)

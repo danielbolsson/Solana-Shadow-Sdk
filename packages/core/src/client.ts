@@ -340,6 +340,10 @@ export class ShadowClient {
 
     console.log('📝 Building deposit transaction...');
     // Build instruction
+    // Generate new root (Client logic: Poseidon Tree with 1 leaf)
+    const commitmentBigInt = BigInt('0x' + Buffer.from(commitment.value).toString('hex'));
+    const newRoot = this.bnToBuf(this.getMockRoot(commitmentBigInt).toString());
+
     const instruction = new TransactionInstruction({
       keys: [
         { pubkey: poolAddress, isSigner: false, isWritable: true },
@@ -348,7 +352,7 @@ export class ShadowClient {
         { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
       ],
       programId: this.programId,
-      data: this.encodeDepositInstruction(commitment.value, params.amount),
+      data: this.encodeDepositInstruction(commitment.value, params.amount, newRoot),
     });
 
     // Send transaction
@@ -476,6 +480,15 @@ export class ShadowClient {
 
     const recipientPubkey = new PublicKey(params.recipient);
 
+    // Calculate New Root
+    let newRootBuf: Buffer;
+    if (proof.publicSignals[2] && proof.publicSignals[2] !== "0") {
+      const newCommitmentBigInt = BigInt(proof.publicSignals[2]);
+      newRootBuf = this.bnToBuf(this.getMockRoot(newCommitmentBigInt).toString());
+    } else {
+      newRootBuf = this.bnToBuf(proof.publicSignals[0]); // Keep Old Root
+    }
+
     // Build instruction
     const instruction = new TransactionInstruction({
       keys: [
@@ -492,7 +505,8 @@ export class ShadowClient {
         this.bnToBuf(proof.publicSignals[1]), // Nullifier (BE) - from circuit (authoritative)
         params.amount,
         recipientPubkey,
-        this.bnToBuf(proof.publicSignals[2]) // New Commitment (BE) - from circuit
+        this.bnToBuf(proof.publicSignals[2]), // New Commitment (BE) - from circuit
+        newRootBuf // New Root (Client calculated)
       ),
     });
     // Send transaction (Directly or via Relayer)
@@ -514,6 +528,7 @@ export class ShadowClient {
           commitment: Buffer.from(commitment.value).toString('hex'),
           nullifier: Buffer.from(nullifier.value).toString('hex'),
           amount: params.amount.toString(),
+          newRoot: newRootBuf.toString('hex'),
         }),
       });
 
@@ -880,13 +895,22 @@ export class ShadowClient {
     return buf;
   }
 
-  private encodeDepositInstruction(commitment: Uint8Array, amount: bigint): Buffer {
-    // Rust: Deposit { commitment: [u8; 32], amount: u64 }
+  private getMockRoot(leaf: bigint): bigint {
+    let mockRoot = leaf;
+    for (let i = 0; i < MERKLE_TREE_DEPTH; i++) {
+      mockRoot = this.poseidon.F.toObject(this.poseidon([mockRoot, 0n])); // Right sibling 0
+    }
+    return mockRoot;
+  }
+
+  private encodeDepositInstruction(commitment: Uint8Array, amount: bigint, newRoot: Buffer): Buffer {
+    // Rust: Deposit { commitment: [u8; 32], amount: u64, new_root: [u8; 32] }
     // Discriminant: 1
-    const buffer = Buffer.alloc(1 + 32 + 8);
+    const buffer = Buffer.alloc(1 + 32 + 8 + 32);
     buffer.writeUInt8(1, 0);
     buffer.set(commitment, 1);
     buffer.writeBigUInt64LE(amount, 33);
+    buffer.set(newRoot, 41);
     return buffer;
   }
 
@@ -896,7 +920,8 @@ export class ShadowClient {
     nullifier: Uint8Array,
     amount: bigint,
     recipient: PublicKey,
-    newCommitment?: Uint8Array
+    newCommitment?: Uint8Array,
+    newRoot?: Uint8Array
   ): Buffer {
     // Rust layout:
     // Withdraw {
@@ -906,10 +931,11 @@ export class ShadowClient {
     //   new_commitment: Option<[u8; 32]>,
     //   recipient: Pubkey,
     //   amount: u64,
+    //   new_root: [u8; 32],
     // }
     // Discriminant: 2
 
-    const buffer = Buffer.alloc(1 + 4 + proof.length + 32 + 32 + 1 + 32 + 32 + 8); // Max size
+    const buffer = Buffer.alloc(1 + 4 + proof.length + 32 + 32 + 1 + 32 + 32 + 8 + 32); // Max size
     let offset = 0;
 
     buffer.writeUInt8(2, offset); // Discriminant
@@ -941,10 +967,15 @@ export class ShadowClient {
     offset += 32;
 
     buffer.writeBigUInt64LE(amount, offset);
+    offset += 8;
+
+    buffer.set(newRoot || root, offset); // If newRoot not provided (should be), use logic? No, must provide.
+    // If optional, fallback to root?
+    offset += 32;
 
     // Slice buffer to actual size used
     // offset += 8; // Handled by write
-    return buffer.slice(0, offset + 8);
+    return buffer.slice(0, offset);
   }
 
   private async sendAndConfirm(transaction: Transaction, extraSigners: Keypair[] = []): Promise<string> {

@@ -154,6 +154,9 @@ app.post('/api/relayer/withdraw', async (req, res) => {
     console.log(`   [RELAYER] Relayer Balance: ${(await connection.getBalance(relayerKeypair.publicKey)) / 1e9} SOL`);
 
     // Correct Borsh serialization for Withdraw instruction (Enum index 2)
+    // Request includes newRoot?
+    const { proof, publicSignals, amount, recipient, poolAddress, vaultAddress, vkAddress, newRoot } = req.body;
+
     // Deserialize Proof
     const proofBuffer = Buffer.from(proof, 'hex');
 
@@ -176,8 +179,8 @@ app.post('/api/relayer/withdraw', async (req, res) => {
     const nullifierBuf = bnToBuf(signals[1]);
     const newCommitmentBuf = bnToBuf(signals[2]);
 
-    // Calculate size: 1 (Disc) + 4 (ProofLen) + Proof + 32 (Root) + 32 (Nullifier) + 1 (Opt) + 32 (NewCommitment) + 32 (Recipient) + 8 (Amount)
-    const data = Buffer.alloc(1 + 4 + proofBuffer.length + 32 + 32 + 1 + 32 + 32 + 8);
+    // Calculate size: 1 (Disc) + 4 (ProofLen) + Proof + 32 (Root) + 32 (Nullifier) + 1 (Opt) + 32 (NewCommitment) + 32 (Recipient) + 8 (Amount) + 32 (NewRoot)
+    const data = Buffer.alloc(1 + 4 + proofBuffer.length + 32 + 32 + 1 + 32 + 32 + 8 + 32);
 
     let offset = 0;
     data.writeUInt8(2, offset); // Discriminator (Withdraw = 2)
@@ -199,10 +202,18 @@ app.post('/api/relayer/withdraw', async (req, res) => {
     newCommitmentBuf.copy(data, offset); // New Commitment
     offset += 32;
 
-    new PublicKey(recipient).toBuffer().copy(data, offset); // Recipient
+    new PublicKey(recipient).toBuffer().copy(data, offset);
     offset += 32;
 
-    data.writeBigUInt64LE(BigInt(amount), offset); // Amount
+    data.writeBigUInt64LE(BigInt(amount), offset);
+    offset += 8;
+
+    // Append New Root
+    const newRootBuf = Buffer.from(newRoot || "00".repeat(32), 'hex'); // Fallback?
+    newRootBuf.copy(data, offset);
+    offset += 32;
+
+
 
     const instruction = new TransactionInstruction({
       keys: [

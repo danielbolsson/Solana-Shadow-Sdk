@@ -39,9 +39,10 @@ impl Processor {
             PrivacyInstruction::Deposit {
                 commitment,
                 amount,
+                new_root,
             } => {
                 msg!("Instruction: Deposit");
-                Self::process_deposit(program_id, accounts, commitment, amount)
+                Self::process_deposit(program_id, accounts, commitment, amount, new_root)
             }
             PrivacyInstruction::Withdraw {
                 proof,
@@ -50,6 +51,7 @@ impl Processor {
                 new_commitment,
                 recipient,
                 amount,
+                new_root,
             } => {
                 msg!("Instruction: Withdraw");
                 Self::process_withdraw(
@@ -61,6 +63,7 @@ impl Processor {
                     new_commitment,
                     recipient,
                     amount,
+                    new_root,
                 )
             }
             PrivacyInstruction::PrivateTransfer {
@@ -239,6 +242,7 @@ impl Processor {
         accounts: &[AccountInfo],
         commitment: [u8; 32],
         amount: u64,
+        new_root: [u8; 32],
     ) -> ProgramResult {
         let account_info_iter = &mut accounts.iter();
         let pool_account = next_account_info(account_info_iter)?;
@@ -266,7 +270,7 @@ impl Processor {
         )?;
 
         // Add commitment to tree
-        pool_state.add_commitment(commitment);
+        pool_state.add_commitment(commitment, new_root);
         pool_state.tvl += amount;
 
         // Save state
@@ -289,6 +293,7 @@ impl Processor {
         new_commitment: Option<[u8; 32]>,
         recipient: Pubkey,
         amount: u64,
+        new_root: [u8; 32],
     ) -> ProgramResult {
         let account_info_iter = &mut accounts.iter();
         let pool_account = next_account_info(account_info_iter)?;
@@ -314,21 +319,13 @@ impl Processor {
 
         // Verify merkle root
         msg!("Debug: Checking Merkle Root...");
-        #[cfg(feature = "real-zk-verification")]
-        {
-            if root != pool_state.merkle_root {
-                msg!("Warning: Merkle root mismatch ignored for demo (Client=Poseidon, Contract=Keccak)");
-                msg!("  Expected (Contract): {:?}", pool_state.merkle_root);
-                msg!("  Got (Client): {:?}", root);
-                // return Err(PrivacyError::InvalidMerkleRoot.into()); // Disabled for demo
-            } else {
-                msg!("✓ Merkle root verified");
-            }
+        if root != pool_state.merkle_root {
+            msg!("Error: Merkle root mismatch");
+            msg!("  Expected (Contract): {:?}", pool_state.merkle_root);
+            msg!("  Got (Proof): {:?}", root);
+            return Err(PrivacyError::InvalidMerkleRoot.into());
         }
-        #[cfg(not(feature = "real-zk-verification"))]
-        {
-            msg!("Merkle root check skipped for demo (hash mismatch)");
-        }
+        msg!("✓ Merkle root verified");
 
         // Verify ZK proof
         let public_inputs = vec![
@@ -354,7 +351,7 @@ impl Processor {
 
         // If there's a new commitment (change), add it to tree
         if let Some(commitment) = new_commitment {
-            pool_state.add_commitment(commitment);
+            pool_state.add_commitment(commitment, new_root);
         }
 
         // Transfer from vault to recipient

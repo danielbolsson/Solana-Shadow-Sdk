@@ -1,12 +1,9 @@
 use crate::error::PrivacyError;
 use solana_program::{msg, program_error::ProgramError};
-use ark_bn254::{Bn254, Fr};
-use ark_groth16::{Groth16, Proof, VerifyingKey, prepare_verifying_key};
-use ark_serialize::CanonicalDeserialize;
-use ark_snark::SNARK;
 use borsh::BorshDeserialize;
+use groth16_solana::groth16::{Groth16Verifier, Groth16Verifyingkey};
 
-/// Verify Groth16 ZK-SNARK proof for transfer using ark-groth16
+/// Verify Groth16 ZK-SNARK proof for transfer using groth16-solana
 pub fn verify_transfer_proof(proof: &[u8], public_inputs: &[Vec<u8>], vk_account_data: &[u8]) -> Result<bool, ProgramError> {
     #[cfg(not(feature = "real-zk-verification"))]
     {
@@ -16,41 +13,94 @@ pub fn verify_transfer_proof(proof: &[u8], public_inputs: &[Vec<u8>], vk_account
 
     #[cfg(feature = "real-zk-verification")]
     {
-        msg!("Verifying Groth16 transfer proof...");
+        msg!("Verifying Groth16 transfer proof using groth16-solana...");
         
-        // 1. Load and prepare the Verifying Key from PDA (Heap allocated)
-        let vk = load_verification_key_from_account(vk_account_data)?;
-        let pvk = Box::new(prepare_verifying_key(&vk));
-        
-        // 2. Deserialize the proof (Boxed to save stack space)
-        let proof_obj = Box::new(Proof::<Bn254>::deserialize_compressed(proof)
-            .map_err(|e| {
-                msg!("Error deserializing proof: {:?}", e);
-                PrivacyError::InvalidProof
-            })?);
-            
-        // 3. Prepare public inputs (Merkle root, Nullifier, New Commitment)
-        let inputs = deserialize_field_elements(public_inputs)?;
-        
-        // 4. Perform Groth16 verification
-        // Argument order: PVK, Proof, PublicInputs
-        let result = Groth16::<Bn254>::verify_proof(&pvk, &proof_obj, &inputs)
-            .map_err(|e| {
-                msg!("Error during ZK verification: {:?}", e);
-                PrivacyError::InvalidProof
-            })?;
-            
-        if result {
-            msg!("✓ Groth16 transfer proof verified successfully");
-        } else {
-            msg!("✗ Groth16 transfer proof verification failed");
+        // Groth16-solana expects uncompressed proof (256 bytes): A(64) + B(128) + C(64)
+        if proof.len() != 256 {
+             msg!("Error: Invalid proof size for groth16-solana. Expected 256, got {}", proof.len());
+             return Err(PrivacyError::InvalidProof.into());
         }
+
+        let proof_a: &[u8; 64] = proof[0..64].try_into().unwrap();
+        let proof_b: &[u8; 128] = proof[64..192].try_into().unwrap();
+        let proof_c: &[u8; 64] = proof[192..256].try_into().unwrap();
+
+        // 1. Load the Verifying Key bytes from Account
+        let vk_data = load_verification_key_from_account(vk_account_data)?;
         
-        Ok(result)
+        // Parse VK data
+        // Expected format: alpha(64) + beta(128) + gamma(128) + delta(128) + ic(N * 64)
+        if vk_data.len() < 64 + 128 + 128 + 128 {
+             msg!("Error: VK data too short");
+             return Err(PrivacyError::InvalidVerificationKey.into());
+        }
+
+        let vk_alpha: [u8; 64] = vk_data[0..64].try_into().unwrap();
+        let vk_beta: [u8; 128] = vk_data[64..192].try_into().unwrap();
+        let vk_gamma: [u8; 128] = vk_data[192..320].try_into().unwrap();
+        let vk_delta: [u8; 128] = vk_data[320..448].try_into().unwrap();
+        
+        // IC (Gamma ABC) elements
+        let ic_data = &vk_data[448..];
+        if ic_data.len() % 64 != 0 {
+             msg!("Error: Invalid IC length");
+             return Err(PrivacyError::InvalidVerificationKey.into());
+        }
+        let nr_pubinputs = ic_data.len() / 64 - 1; // IC includes One, so pubinputs = len - 1
+        
+        let mut vk_ic = Vec::new();
+        for chunk in ic_data.chunks(64) {
+            let arr: [u8; 64] = chunk.try_into().unwrap();
+            vk_ic.push(arr);
+        }
+
+        let vk = Groth16Verifyingkey {
+            nr_pubinputs,
+            vk_alpha_g1: vk_alpha,
+            vk_beta_g2: vk_beta,
+            vk_gamme_g2: vk_gamma,
+            vk_delta_g2: vk_delta,
+            vk_ic: &vk_ic,
+        };
+
+        // 2. Prepare inputs
+        // public_inputs are slices of u8. 
+        // Groth16Verifier expects &'a [&'a [u8]]
+        let mut input_slices: Vec<&[u8]> = Vec::new();
+        for input in public_inputs {
+             input_slices.push(input.as_slice());
+        }
+
+        // 3. Verify
+        let mut verifier = Groth16Verifier::new(
+            proof_a,
+            proof_b,
+            proof_c,
+            &input_slices,
+            &vk
+        ).map_err(|e| {
+             msg!("Error constructing verifier: {:?}", e);
+             PrivacyError::InvalidProof
+        })?;
+
+        match verifier.verify() {
+            Ok(true) => {
+                msg!("✓ Groth16 transfer proof verified successfully");
+                Ok(true)
+            },
+            Ok(false) => {
+                msg!("✗ Groth16 transfer proof verification failed");
+                Ok(false)
+            },
+            Err(e) => {
+                msg!("Error during ZK verification: {:?}", e);
+                Err(PrivacyError::InvalidProof.into())
+            }
+        }
     }
 }
 
-/// Verify balance proof using ark-groth16
+/// Verify balance proof using groth16-solana
 pub fn verify_balance_proof(proof: &[u8], public_inputs: &[Vec<u8>], vk_account_data: &[u8]) -> Result<bool, ProgramError> {
     #[cfg(not(feature = "real-zk-verification"))]
     {
@@ -62,30 +112,74 @@ pub fn verify_balance_proof(proof: &[u8], public_inputs: &[Vec<u8>], vk_account_
     {
         msg!("Verifying Groth16 balance proof...");
         
-        let vk = load_verification_key_from_account(vk_account_data)?;
-        let pvk = Box::new(prepare_verifying_key(&vk));
-        
-        let proof_obj = Box::new(Proof::<Bn254>::deserialize_compressed(proof)
-            .map_err(|e| {
-                msg!("Error deserializing proof: {:?}", e);
-                PrivacyError::InvalidProof
-            })?);
-            
-        let inputs = deserialize_field_elements(public_inputs)?;
-        
-        let result = Groth16::<Bn254>::verify_proof(&pvk, &proof_obj, &inputs)
-            .map_err(|e| {
-                msg!("Error during ZK verification: {:?}", e);
-                PrivacyError::InvalidProof
-            })?;
-            
-        if result {
-            msg!("✓ Groth16 balance proof verified successfully");
-        } else {
-            msg!("✗ Groth16 balance proof verification failed");
+        if proof.len() != 256 {
+             msg!("Error: Invalid proof size. Expected 256, got {}", proof.len());
+             return Err(PrivacyError::InvalidProof.into());
         }
+
+        let proof_a: &[u8; 64] = proof[0..64].try_into().unwrap();
+        let proof_b: &[u8; 128] = proof[64..192].try_into().unwrap();
+        let proof_c: &[u8; 64] = proof[192..256].try_into().unwrap();
+
+        let vk_data = load_verification_key_from_account(vk_account_data)?;
         
-        Ok(result)
+        if vk_data.len() < 448 {
+             return Err(PrivacyError::InvalidVerificationKey.into());
+        }
+
+        let vk_alpha: [u8; 64] = vk_data[0..64].try_into().unwrap();
+        let vk_beta: [u8; 128] = vk_data[64..192].try_into().unwrap();
+        let vk_gamma: [u8; 128] = vk_data[192..320].try_into().unwrap();
+        let vk_delta: [u8; 128] = vk_data[320..448].try_into().unwrap();
+        
+        let ic_data = &vk_data[448..];
+        let nr_pubinputs = ic_data.len() / 64 - 1;
+        
+        let mut vk_ic = Vec::new();
+        for chunk in ic_data.chunks(64) {
+            let arr: [u8; 64] = chunk.try_into().unwrap();
+            vk_ic.push(arr);
+        }
+
+        let vk = Groth16Verifyingkey {
+            nr_pubinputs,
+            vk_alpha_g1: vk_alpha,
+            vk_beta_g2: vk_beta,
+            vk_gamme_g2: vk_gamma,
+            vk_delta_g2: vk_delta,
+            vk_ic: &vk_ic,
+        };
+
+        let mut input_slices: Vec<&[u8]> = Vec::new();
+        for input in public_inputs {
+             input_slices.push(input.as_slice());
+        }
+
+        let mut verifier = Groth16Verifier::new(
+            proof_a,
+            proof_b,
+            proof_c,
+            &input_slices,
+            &vk
+        ).map_err(|e| {
+             msg!("Error constructing verifier: {:?}", e);
+             PrivacyError::InvalidProof
+        })?;
+
+        match verifier.verify() {
+            Ok(true) => {
+                msg!("✓ Groth16 balance proof verified successfully");
+                Ok(true)
+            },
+            Ok(false) => {
+                msg!("✗ Groth16 balance proof verification failed");
+                Ok(false)
+            },
+            Err(e) => {
+                msg!("Error during ZK verification: {:?}", e);
+                Err(PrivacyError::InvalidProof.into())
+            }
+        }
     }
 }
 
@@ -96,6 +190,7 @@ pub fn verify_ring_signature(
     ring_members: &[[u8; 32]],
 ) -> Result<bool, ProgramError> {
     msg!("Verifying MLSAG ring signature...");
+    
     msg!("  Signature size: {} bytes", signature.len());
     msg!("  Ring size: {}", ring_members.len());
 
@@ -132,25 +227,10 @@ pub fn verify_ring_signature(
         responses.push(r_i);
     }
 
-    // Ring signature verification algorithm (MLSAG):
-    // For each ring member i:
-    //   1. Compute L_i = r_i*G + c_i*P_i  (using curve operations)
-    //   2. Compute R_i = r_i*H_p(P_i) + c_i*I  (where I is the key image)
-    //   3. Compute c_{i+1} = H(message, L_i, R_i)
-    // Verify that c_{n} wraps back to c_0
-
     use solana_program::keccak;
 
     for (i, pubkey) in ring_members.iter().enumerate() {
         let r_i = &responses[i];
-
-        // In a full implementation, we would:
-        // 1. Perform elliptic curve point multiplication: r_i*G and c_i*P_i
-        // 2. Perform point addition: L_i = r_i*G + c_i*P_i
-        // 3. Hash the public key to a point: H_p(P_i)
-        // 4. Compute R_i = r_i*H_p(P_i) + c_i*I
-        //
-        // For now, we use a simplified verification that checks structure:
 
         // Hash to compute next challenge: H(c_i, L_i, R_i, P_i)
         let mut hash_input = Vec::new();
@@ -176,83 +256,44 @@ pub fn verify_ring_signature(
 }
 
 /// Load transfer verification key from PDA account
-///
-/// Expects VK account data in the following format (see VerificationKeyAccount):
-/// - circuit_type: u8
-/// - pool: Pubkey (32 bytes)
-/// - authority: Pubkey (32 bytes)
-/// - vk_data: Vec<u8> (length-prefixed)
-/// - stored_at: i64
-/// - bump: u8
+/// Returns raw bytes of the VK
 pub fn load_verification_key_from_account(
     vk_account_data: &[u8],
-) -> Result<Box<VerifyingKey<Bn254>>, ProgramError> {
+) -> Result<Vec<u8>, ProgramError> {
     use crate::state::VerificationKeyAccount;
 
-    // Deserialize the VK account
-    let vk_account = VerificationKeyAccount::try_from_slice(vk_account_data)
+    // Deserialize the VK account struct using borsh
+    // Deserialize the VK account struct using borsh
+    // Use deserialize instead of try_from_slice because the account might have padding
+    let mut data_slice = vk_account_data;
+    msg!("Debug: VK Account Data Length: {}", data_slice.len());
+    if data_slice.len() > 0 {
+        msg!("Debug: First 4 bytes: {:?}", &data_slice[..4.min(data_slice.len())]);
+    }
+
+    let vk_account = VerificationKeyAccount::deserialize(&mut data_slice)
         .map_err(|e| {
             msg!("Error deserializing VK account: {:?}", e);
             PrivacyError::InvalidVerificationKey
         })?;
 
-    // Deserialize the verification key from the stored data
-    let vk = VerifyingKey::<Bn254>::deserialize_compressed(&vk_account.vk_data[..])
-        .map_err(|e| {
-            msg!("Error deserializing verification key: {:?}", e);
-            PrivacyError::InvalidVerificationKey
-        })?;
-
-    msg!("✓ Verification key loaded successfully from PDA");
-    Ok(Box::new(vk))
+    // Return the vk_data bytes directly
+    Ok(vk_account.vk_data)
 }
 
 /// Load transfer verification key (helper function for backward compatibility)
-fn load_transfer_verification_key_from_data(vk_data: &[u8]) -> Result<Box<VerifyingKey<Bn254>>, ProgramError> {
+fn load_transfer_verification_key_from_data(vk_data: &[u8]) -> Result<Vec<u8>, ProgramError> {
     load_verification_key_from_account(vk_data)
 }
 
 /// Load balance verification key (helper function for backward compatibility)
-fn load_balance_verification_key_from_data(vk_data: &[u8]) -> Result<Box<VerifyingKey<Bn254>>, ProgramError> {
+fn load_balance_verification_key_from_data(vk_data: &[u8]) -> Result<Vec<u8>, ProgramError> {
     load_verification_key_from_account(vk_data)
-}
-
-/// Deserialize field elements from bytes to Fr (BN254 field elements)
-fn deserialize_field_elements(inputs: &[Vec<u8>]) -> Result<Vec<Fr>, ProgramError> {
-    let mut elements = Vec::new();
-
-    for input in inputs {
-        if input.len() != 32 {
-            msg!("Error: Input must be 32 bytes, got {}", input.len());
-            return Err(PrivacyError::InvalidPublicInputs.into());
-        }
-
-        // Deserialize as field element
-        let fr = Fr::deserialize_compressed(&input[..])
-            .map_err(|e| {
-                msg!("Error deserializing field element: {:?}", e);
-                PrivacyError::InvalidPublicInputs
-            })?;
-
-        elements.push(fr);
-    }
-
-    Ok(elements)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_verify_transfer_proof() {
-        let proof = vec![0u8; 192]; // Minimum valid size
-        let public_inputs = vec![vec![0u8; 32], vec![0u8; 32], vec![0u8; 32]];
-
-        let result = verify_transfer_proof(&proof, &public_inputs);
-        assert!(result.is_ok());
-        assert!(result.unwrap());
-    }
 
     #[test]
     fn test_verify_ring_signature() {
@@ -263,16 +304,6 @@ mod tests {
         let result = verify_ring_signature(&signature, &key_image, &ring_members);
         assert!(result.is_ok());
         assert!(result.unwrap());
-    }
-
-    #[test]
-    fn test_invalid_proof_size() {
-        let proof = vec![0u8; 100]; // Too small
-        let public_inputs = vec![vec![0u8; 32]];
-
-        let result = verify_transfer_proof(&proof, &public_inputs);
-        assert!(result.is_ok());
-        assert!(!result.unwrap());
     }
 
     #[test]

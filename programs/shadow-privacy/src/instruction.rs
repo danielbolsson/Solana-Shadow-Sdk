@@ -30,6 +30,8 @@ pub enum PrivacyInstruction {
         commitment: [u8; 32],
         /// Amount to deposit (must match denomination)
         amount: u64,
+        /// New Merkle root
+        new_root: [u8; 32],
     },
 
     /// Withdraw from privacy pool using ZK proof
@@ -53,6 +55,8 @@ pub enum PrivacyInstruction {
         recipient: Pubkey,
         /// Amount to withdraw
         amount: u64,
+        /// New Merkle root
+        new_root: [u8; 32],
     },
 
     /// Private transfer using ring signature
