@@ -106,8 +106,9 @@ async function main() {
     console.log('   Alice Private Balance:', Number(alicePrivateBalanceFinal) / 1e9, 'SOL');
 
     if (bobBalanceFinal > bobInitialBalance) {
+
         console.log('\n🎉 SUCCESS! Bob received the funds privately through the Shadow Protocol!');
-        console.log('   Total transferred: 0.1 SOL');
+        console.log('   Total transferred: ', (bobBalanceFinal - bobInitialBalance) / 1e9, ' SOL');
     } else {
         console.log('\n❌ FAILED: Bob did not receive funds.');
     }
