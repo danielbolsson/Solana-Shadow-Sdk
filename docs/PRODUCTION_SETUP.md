@@ -39,6 +39,7 @@ solana program deploy target/deploy/shadow_privacy.so
 cd web-dashboard
 export SHADOW_ENV=localnet
 export SHADOW_PROGRAM_ID=<YOUR_PROGRAM_ID> 
+npm install
 npm start
 ```
 *   Dashboard: `http://localhost:5000`
