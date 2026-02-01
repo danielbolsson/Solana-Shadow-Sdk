@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shadow Transfer - Interactive Demo</title>
+    <link rel="icon" href="favicon.png" type="image/png">
     <style>
         * {
             margin: 0;
@@ -43,6 +44,20 @@
         .subtitle {
             color: #a1a1aa;
             font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+
+        .network-pill {
+            display: inline-block;
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
         }
 
         .card {
@@ -259,6 +274,22 @@
 <body>
     <div class="container">
         <!-- Header replaced by nav.js -->
+        <header>
+            <div id="networkIndicator" class="network-pill">Connecting...</div>
+            <h1>Shadow Transfer Demo</h1>
+            <p class="subtitle">Experience private Solana transactions with zero on-chain history logs.</p>
+
+            <div
+                style="text-align: left; background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 2rem;">
+                <h3 style="color: #fff; margin-bottom: 0.5rem;">How to use:</h3>
+                <ol style="margin-left: 1.5rem; color: #d4d4d8; line-height: 1.8;">
+                    <li><strong>Connect Wallet</strong>: Use Phantom or Solflare on the active network.</li>
+                    <li><strong>Shield Assets</strong>: Convert public SOL into a private "Shadow Note".</li>
+                    <li><strong>Send Privately</strong>: Transfer the note to a recipient. The Relayer handles gas,
+                        breaking the link between sender and receiver.</li>
+                </ol>
+            </div>
+        </header>
 
         <!-- Wallet Connection -->
         <div class="card wallet-section">
@@ -266,8 +297,12 @@
             <button id="connectWallet" class="wallet-button">Connect Wallet</button>
             <div id="walletInfo" class="wallet-info hidden">
                 <div>
-                    <div style="font-size: 0.875rem; color: #a1a1aa; margin-bottom: 0.25rem;">Connected</div>
+                    <div style="font-size: 0.875rem; color: #a1a1aa; margin-bottom: 0.25rem;">Connected Wallet</div>
                     <div class="wallet-address" id="walletAddress"></div>
+                    <div style="margin-top: 4px; font-size: 0.9rem;">
+                        <span style="color: #a1a1aa;">Balance: </span>
+                        <strong id="walletBalance" style="color: #fff;">-</strong>
+                    </div>
                 </div>
                 <button id="disconnectWallet" class="wallet-button"
                     style="padding: 0.5rem 1rem; font-size: 0.9rem;">Disconnect</button>
@@ -314,10 +349,17 @@
                 PROGRAM_ID = cfg.programId;
                 CLUSTER_PARAM = NETWORK === 'localnet' ? 'custom&customUrl=http://localhost:8899' : NETWORK;
 
+                // Update UI Network Indicator
+                const netInd = document.getElementById('networkIndicator');
+                netInd.textContent = NETWORK.toUpperCase();
+                // Optional color coding
+                if (NETWORK === 'mainnet') netInd.style.color = '#ef4444'; // Red for caution on mainnet
+
                 addTrace(`Loaded Configuration: ${NETWORK}`, 'info');
                 addTrace(`RPC URL: ${RPC_URL}`, 'info');
             } catch (err) {
                 addTrace(`Failed to load config: ${err.message}`, 'error');
+                document.getElementById('networkIndicator').textContent = 'UNKNOWN';
                 // Fallback
                 NETWORK = 'devnet';
                 RPC_URL = 'https://api.devnet.solana.com';
@@ -335,6 +377,7 @@
         const disconnectWalletBtn = document.getElementById('disconnectWallet');
         const walletInfo = document.getElementById('walletInfo');
         const walletAddress = document.getElementById('walletAddress');
+        const walletBalance = document.getElementById('walletBalance');
         const transferForm = document.getElementById('transferForm');
         const sendButton = document.getElementById('sendButton');
         const traceSection = document.getElementById('traceSection');
@@ -355,16 +398,21 @@
                 wallet = window.solana;
                 connection = new solanaWeb3.Connection(RPC_URL, 'confirmed');
 
-                walletAddress.textContent = resp.publicKey.toString();
+                // Update Wallet UI
+                walletAddress.innerHTML = createExplorerLink(resp.publicKey.toString());
+
+                // Fetch Balance
+                const balance = await connection.getBalance(resp.publicKey);
+                const solBalance = (balance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(4);
+                walletBalance.textContent = `${solBalance} SOL`;
+
                 walletInfo.classList.remove('hidden');
                 connectWalletBtn.classList.add('hidden');
                 transferForm.classList.remove('hidden');
                 traceSection.classList.remove('hidden');
 
-                addTrace(`✓ Wallet connected: ${formatAddress(resp.publicKey.toString())}`, 'success');
-
-                const balance = await connection.getBalance(resp.publicKey);
-                addTrace(`Wallet balance: ${(balance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(4)} SOL`, 'info');
+                addTrace(`✓ Wallet connected: ${resp.publicKey.toString().slice(0, 8)}...`, 'success');
+                addTrace(`Wallet balance: ${solBalance} SOL`, 'info');
 
                 // Initialize Shadow Client
                 addTrace('Initializing Shadow Privacy SDK...', 'info');

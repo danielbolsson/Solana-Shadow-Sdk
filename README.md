@@ -23,7 +23,7 @@
 [<kbd> <br> Quick Start <br> </kbd>](#-quick-start) 
 [<kbd> <br> Architecture <br> </kbd>](#-architecture) 
 [<kbd> <br> Documentation <br> </kbd>](#-documentation) 
-[<kbd> <br> Live Demo <br> </kbd>](http://localhost:5000/transfer.html)
+[<kbd> <br> Live Demo <br> </kbd>](https://shadow.dozone.se/)
 
 </div>
 
@@ -124,7 +124,8 @@ npm install
 npx ts-node dashboard-server.ts
 ```
 > **Access the Dashboard:** http://localhost:5000  
-> **Try the Interactive Demo:** http://localhost:5000/transfer.html
+
+> **On-Line Demo available on devnet:** https://shadow.dozone.se
 
 ---
 
@@ -147,9 +148,9 @@ npx ts-node dashboard-server.ts
 
 Detailed documentation available for each component:
 
-- **[Trusted Setup Guide](TRUSTED_SETUP.md)** - Multi-party ceremony instructions.
-- **[Deployment Guide](PRODUCTION_SETUP.md)** - Instructions for Local, Devnet, and Mainnet.
-- **[Architecture Deep Dive](web-dashboard/public/explanation.html)** - Technical explanation of the protocol.
+- **[Deployment Guide](docs/PRODUCTION_SETUP.md)** - Instructions for Local, Devnet, and Mainnet.
+- **[Architecture Deep Dive](https://shadow.dozone.se/explanation.html)** - Technical explanation of the protocol.
+- **[Trusted Setup Guide](docs/TRUSTED_SETUP.md)** - Multi-party ceremony instructions.
 - **[Ceremony Coordinator](ceremony-coordinator/README.md)** - Guide for running the MPC ceremony.
 
 ---

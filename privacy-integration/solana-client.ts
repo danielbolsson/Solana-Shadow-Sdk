@@ -80,7 +80,8 @@ export class SolanaPrivacyClient {
   private connection: Connection;
   private programId: PublicKey;
   private zkGenerator: ZKProofGenerator;
-  private merkleTree: MerkleTree;
+  private merkleTree!: MerkleTree;
+  private initialized: boolean = false;
 
   constructor(
     rpcUrl: string = 'https://api.devnet.solana.com',
@@ -89,7 +90,21 @@ export class SolanaPrivacyClient {
     this.connection = new Connection(rpcUrl, 'confirmed');
     this.programId = new PublicKey(programId);
     this.zkGenerator = new ZKProofGenerator();
-    this.merkleTree = MerkleTree.load('./data/merkle_tree.json');
+  }
+
+  /**
+   * Initialize the client (load Merkle tree)
+   */
+  async initialize(): Promise<void> {
+    if (this.initialized) return;
+    this.merkleTree = await MerkleTree.load('./data/merkle_tree.json');
+    this.initialized = true;
+  }
+
+  private ensureInitialized(): void {
+    if (!this.initialized) {
+      throw new Error('SolanaPrivacyClient not initialized. Call initialize() first.');
+    }
   }
 
   /**
@@ -187,8 +202,8 @@ export class SolanaPrivacyClient {
     amount: number,
     secret: string
   ): Promise<{ commitment: string; nullifier: string; txSignature: string }> {
-    console.log('\n=== Depositing to Shielded Pool ===');
     console.log(`Amount: ${amount / LAMPORTS_PER_SOL} SOL`);
+    this.ensureInitialized();
 
     // Generate commitment
     const commitment = this.generateCommitment(amount, secret);
@@ -511,6 +526,7 @@ export class SolanaPrivacyClient {
    * Helper: Find commitment index in tree
    */
   private findCommitmentIndex(commitment: string): number {
+    this.ensureInitialized();
     for (let i = 0; i < this.merkleTree.getLeafCount(); i++) {
       // Would need to check tree leaves - simplified for now
     }

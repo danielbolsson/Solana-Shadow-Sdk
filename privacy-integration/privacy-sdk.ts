@@ -57,6 +57,8 @@ export class ShadowPrivacySDK {
    */
   async initialize(): Promise<void> {
     if (this.initialized) return;
+    // Initialize components
+    await this.solanaClient.initialize();
 
     // Initialize Merkle tree
     this.merkleTree = await MerkleTree.load(
@@ -189,7 +191,7 @@ export class ShadowPrivacySDK {
     const newNote = this.noteManager.createNote(amountLamports, toOwner);
 
     // Reload Merkle tree to get latest state
-    this.merkleTree = MerkleTree.load(
+    this.merkleTree = await MerkleTree.load(
       path.join(this.config.dataDir, 'merkle_tree.json')
     );
 

@@ -2,7 +2,10 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "commonjs",
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
@@ -17,5 +20,9 @@
     "resolveJsonModule": true,
     "moduleResolution": "node"
   },
-  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+  "exclude": [
+    "node_modules",
+    "dist", 
+    "**/*.test.ts"
+  ]
 }
