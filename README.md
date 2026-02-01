@@ -25,6 +25,8 @@
 [<kbd> <br> Documentation <br> </kbd>](#-documentation) 
 [<kbd> <br> Live Demo <br> </kbd>](https://shadow.dozone.se/)
 
+**Live Demo running on devnet:** https://shadow.dozone.se
+
 </div>
 
 ---
@@ -123,10 +125,8 @@ cd web-dashboard
 npm install
 npx ts-node dashboard-server.ts
 ```
-> **Access the Dashboard:** http://localhost:5000  
-
-> **Live Demo available on devnet:** https://shadow.dozone.se
-
+> **Access the Dashboard:** http://localhost:5000
+> 
 ---
 
 ## 🏗️ Project Structure
