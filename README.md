@@ -125,7 +125,7 @@ npx ts-node dashboard-server.ts
 ```
 > **Access the Dashboard:** http://localhost:5000  
 
-> **On-Line Demo available on devnet:** https://shadow.dozone.se
+> **Live Demo available on devnet:** https://shadow.dozone.se
 
 ---
 
