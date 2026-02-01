@@ -76,6 +76,8 @@ pub enum PrivacyInstruction {
         new_commitment: [u8; 32],
         /// Encrypted amount (for recipient only)
         encrypted_amount: Vec<u8>,
+        /// New Merkle root
+        new_root: [u8; 32],
     },
 
     /// Verify balance proof

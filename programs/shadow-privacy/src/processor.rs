@@ -72,6 +72,7 @@ impl Processor {
                 ring_members,
                 new_commitment,
                 encrypted_amount,
+                new_root,
             } => {
                 msg!("Instruction: PrivateTransfer");
                 Self::process_private_transfer(
@@ -82,6 +83,7 @@ impl Processor {
                     ring_members,
                     new_commitment,
                     encrypted_amount,
+                    new_root,
                 )
             }
             PrivacyInstruction::VerifyBalance {
@@ -387,6 +389,7 @@ impl Processor {
         ring_members: Vec<[u8; 32]>,
         new_commitment: [u8; 32],
         encrypted_amount: Vec<u8>,
+        new_root: [u8; 32],
     ) -> ProgramResult {
         let account_info_iter = &mut accounts.iter();
         let pool_account = next_account_info(account_info_iter)?;
@@ -410,7 +413,7 @@ impl Processor {
         pool_state.add_key_image(key_image);
 
         // Add new commitment for recipient
-        pool_state.add_commitment(new_commitment);
+        pool_state.add_commitment(new_commitment, new_root);
 
         // Save state
         pool_state.serialize(&mut *pool_account.data.borrow_mut())?;
