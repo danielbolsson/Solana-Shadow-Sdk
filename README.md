@@ -31,6 +31,11 @@
 
 ---
 
+## Contact
+
+My name is Daniel Olsson and this is my contribution to Solana Privacy Hack 2026. 
+If you want to contact me, here is my email: daniel.b.olsson@gmail.com
+
 ## 🛡️ Overview
 
 Shadow Privacy is a **production-ready privacy protocol** for Solana that enables confidential transactions using zero-knowledge proofs. It allows users to deposit funds into a shielded pool and withdraw them to a fresh address with **zero on-chain link** between the deposit and withdrawal.
